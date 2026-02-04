@@ -191,17 +191,21 @@ export default function HomePage() {
       .from('profiles')
       .select('*')
       .eq('status', 'approved')
-      .filter('id', 'not.in', safeIds)
-      .limit(10);
+      .filter('id', 'not.in', safeIds);
     
-    // TEMPORARILY DISABLED GENDER FILTERS FOR DIAGNOSTICS
-    // if (myProfileData.preferred_gender !== 'Everyone') {
-    //     query = query.eq('gender', myProfileData.preferred_gender);
-    // }
+    // Only apply gender filters if user has a specific preference (not "Everyone")
+    if (myProfileData.preferred_gender !== 'Everyone') {
+      // Filter by preferred gender: show only profiles matching my preference
+      query = query.eq('gender', myProfileData.preferred_gender);
+      
+      // Filter by mutual interest: show only profiles that prefer my gender OR prefer Everyone
+      if (myProfileData.gender) {
+        query = query.or(`preferred_gender.eq.Everyone,preferred_gender.eq.${myProfileData.gender}`);
+      }
+    }
+    // If user prefers "Everyone", show all genders without restriction
 
-    // if (myProfileData.gender) {
-    //      query = query.or(`preferred_gender.eq.Everyone,preferred_gender.eq.${myProfileData.gender}`);
-    // }
+    query = query.limit(10);
 
     const { data: candidates, error } = await query;
     
