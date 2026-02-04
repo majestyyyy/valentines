@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Database } from '@/types/supabase';
@@ -16,7 +16,7 @@ const COLLEGES: Array<'CAS' | 'CCSS' | 'CBA' | 'CEDUC' | 'CDENT' | 'CENG'> = ['C
 const GENDERS: Gender[] = ['Male', 'Female', 'Non-binary', 'Other'];
 const PREF_GENDERS: PreferredGender[] = ['Male', 'Female', 'Non-binary', 'Other', 'Everyone'];
 
-export default function ProfileSetup() {
+function ProfileSetupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isRejected = searchParams.get('rejected') === 'true';
@@ -437,5 +437,17 @@ export default function ProfileSetup() {
       </form>
       </div>
     </div>
+  );
+}
+
+export default function ProfileSetup() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white">
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-ue-red border-t-transparent"></div>
+      </div>
+    }>
+      <ProfileSetupContent />
+    </Suspense>
   );
 }
