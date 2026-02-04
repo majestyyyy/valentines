@@ -96,7 +96,7 @@ export default function AdminAuth() {
           .from('profiles')
           .select('role')
           .eq('id', data.user.id)
-          .single();
+          .single() as { data: { role: string } | null, error: any };
 
         if (profileError) {
           console.log('Profile not found, creating admin profile');
