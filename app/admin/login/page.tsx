@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { Shield, Mail, Key } from 'lucide-react';
+import type { Database } from '@/types/supabase';
 
 export default function AdminAuth() {
   const [mode, setMode] = useState<'signup' | 'login' | 'verify'>('login');
@@ -96,7 +97,7 @@ export default function AdminAuth() {
           .from('profiles')
           .select('role')
           .eq('id', data.user.id)
-          .single() as { data: { role: string } | null, error: any };
+          .single();
 
         if (profileError) {
           console.log('Profile not found, creating admin profile');
@@ -106,9 +107,9 @@ export default function AdminAuth() {
             .insert({
               id: data.user.id,
               email: email,
-              role: 'admin',
-              status: 'approved',
-            } as any);
+              role: 'admin' as const,
+              status: 'approved' as const,
+            });
 
           if (insertError) {
             console.error('Error creating profile:', insertError);
@@ -125,7 +126,7 @@ export default function AdminAuth() {
           // Not an admin, update to admin role
           const { error: updateError } = await supabase
             .from('profiles')
-            .update({ role: 'admin', status: 'approved' } as any)
+            .update({ role: 'admin' as const, status: 'approved' as const })
             .eq('id', data.user.id);
 
           if (updateError) {
