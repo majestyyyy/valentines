@@ -125,7 +125,7 @@ export default function AdminAuth() {
           // Not an admin, update to admin role
           const { error: updateError } = await supabase
             .from('profiles')
-            .update({ role: 'admin', status: 'approved' })
+            .update({ role: 'admin', status: 'approved' } as any)
             .eq('id', data.user.id);
 
           if (updateError) {
