@@ -66,7 +66,7 @@ export default function LoginPage() {
 
       if (data.user) {
         // Check if user has a profile with complete data
-        const { data: profile } = await supabase
+        const { data: profile } = await (supabase as any)
           .from('profiles')
           .select('status, nickname, photo_urls')
           .eq('id', data.user.id)

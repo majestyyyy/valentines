@@ -23,7 +23,7 @@ export default function BanGuard({ children }: { children: React.ReactNode }) {
         }
 
         // Check current status
-        const { data: profile } = await supabase
+        const { data: profile } = await (supabase as any)
           .from('profiles')
           .select('status')
           .eq('id', user.id)

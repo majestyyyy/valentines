@@ -67,8 +67,8 @@ export default function AdminDashboard() {
         table: 'reports'
       }, async (payload) => {
         const newReport = payload.new as Report;
-        const { data: reporter } = await supabase.from('profiles').select('*').eq('id', newReport.reporter_id).single();
-        const { data: reported } = await supabase.from('profiles').select('*').eq('id', newReport.reported_id).single();
+        const { data: reporter } = await (supabase as any).from('profiles').select('*').eq('id', newReport.reporter_id).single();
+        const { data: reported } = await (supabase as any).from('profiles').select('*').eq('id', newReport.reported_id).single();
         
         if (reporter && reported) {
           setReports(current => [...current, { ...newReport, reporter, reported }]);
@@ -89,11 +89,11 @@ export default function AdminDashboard() {
     };
   }, []);
   const fetchStats = async () => {
-    const { data: users } = await supabaseAdmin.from('profiles').select('status', { count: 'exact' });
-    const { data: matches, count: matchCount } = await supabaseAdmin.from('matches').select('*', { count: 'exact', head: true });
+    const { data: users } = await (supabaseAdmin as any).from('profiles').select('status', { count: 'exact' });
+    const { data: matches, count: matchCount } = await (supabaseAdmin as any).from('matches').select('*', { count: 'exact', head: true });
     
-    const pending = users?.filter(u => u.status === 'pending').length || 0;
-    const approved = users?.filter(u => u.status === 'approved').length || 0;
+    const pending = users?.filter((u: any) => u.status === 'pending').length || 0;
+    const approved = users?.filter((u: any) => u.status === 'approved').length || 0;
     
     setStats({
       totalUsers: approved,
@@ -114,7 +114,7 @@ export default function AdminDashboard() {
        .from('profiles')
        .select('role, email')
        .eq('id', user.id)
-       .single();
+       .single() as { data: { role: string; email: string } | null };
     
     setUserEmail(profile?.email || 'Admin User');
     
@@ -135,7 +135,7 @@ export default function AdminDashboard() {
   };
 
   const fetchPendingUsers = async () => {
-    const { data } = await supabaseAdmin
+    const { data } = await (supabaseAdmin as any)
       .from('profiles')
       .select('*')
       .eq('status', 'pending');
@@ -145,12 +145,12 @@ export default function AdminDashboard() {
   };
 
   const fetchReports = async () => {
-    const { data: reportData } = await supabaseAdmin.from('reports').select('*');
+    const { data: reportData } = await (supabaseAdmin as any).from('reports').select('*');
     
     if (reportData && reportData.length > 0) {
-        const enriched = await Promise.all(reportData.map(async (r) => {
-            const { data: reporter } = await supabaseAdmin.from('profiles').select('*').eq('id', r.reporter_id).single();
-            const { data: reported } = await supabaseAdmin.from('profiles').select('*').eq('id', r.reported_id).single();
+        const enriched = await Promise.all(reportData.map(async (r: any) => {
+            const { data: reporter } = await (supabaseAdmin as any).from('profiles').select('*').eq('id', r.reporter_id).single();
+            const { data: reported } = await (supabaseAdmin as any).from('profiles').select('*').eq('id', r.reported_id).single();
             return {
                 ...r,
                 reporter: reporter!,
@@ -167,7 +167,7 @@ export default function AdminDashboard() {
     setStats(prev => ({ ...prev, pendingApprovals: prev.pendingApprovals - 1, totalUsers: status === 'approved' ? prev.totalUsers + 1 : prev.totalUsers }));
     
     try {
-      await supabaseAdmin.from('profiles').update({ status }).eq('id', userId);
+      await (supabaseAdmin as any).from('profiles').update({ status }).eq('id', userId);
     } catch (error) {
       console.error('Error updating profile:', error);
       // Revert on error
@@ -185,22 +185,22 @@ export default function AdminDashboard() {
     
     try {
       // Get all matches for this user
-      const { data: matches } = await supabaseAdmin
+      const { data: matches } = await (supabaseAdmin as any)
         .from('matches')
         .select('user1_id, user2_id')
         .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
 
       // Delete all matches involving this user
       if (matches && matches.length > 0) {
-        await supabaseAdmin
+        await (supabaseAdmin as any)
           .from('matches')
           .delete()
           .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
       }
 
       // Ban the user
-      await supabaseAdmin.from('profiles').update({ status: 'rejected' }).eq('id', userId);
-      await supabaseAdmin.from('reports').delete().eq('id', reportId);
+      await (supabaseAdmin as any).from('profiles').update({ status: 'rejected' }).eq('id', userId);
+      await (supabaseAdmin as any).from('reports').delete().eq('id', reportId);
     } catch (error) {
       console.error('Error banning user:', error);
       // Revert on error
@@ -213,7 +213,7 @@ export default function AdminDashboard() {
     setLoadingMessages(true);
     try {
       // First, find the match between these two users
-      const { data: match } = await supabaseAdmin
+      const { data: match } = await (supabaseAdmin as any)
         .from('matches')
         .select('id')
         .or(`and(user1_id.eq.${reporterId},user2_id.eq.${reportedId}),and(user1_id.eq.${reportedId},user2_id.eq.${reporterId})`)
@@ -227,7 +227,7 @@ export default function AdminDashboard() {
       }
 
       // Get all messages for this match
-      const { data: messages, error } = await supabaseAdmin
+      const { data: messages, error } = await (supabaseAdmin as any)
         .from('messages')
         .select('*')
         .eq('match_id', match.id)

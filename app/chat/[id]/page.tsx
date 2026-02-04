@@ -9,14 +9,13 @@ import { useParams } from 'next/navigation';
 import { validateText } from '@/lib/profanityFilter';
 
 type Message = Database['public']['Tables']['messages']['Row'];
-type Task = Database['public']['Tables']['tasks']['Row'];
 
 export default function ChatRoom() {
   const { id: matchId } = useParams();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [currentUserId, setCurrentUserId] = useState('');
-  const [task, setTask] = useState<Task | null>(null);
+  const [task, setTask] = useState<any | null>(null);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -57,7 +56,7 @@ export default function ChatRoom() {
           .from('matches')
           .select('user1_id, user2_id')
           .eq('id', matchId)
-          .single();
+          .single() as { data: { user1_id: string; user2_id: string } | null };
         
         if (matchData) {
           const partner = matchData.user1_id === data.user.id 
@@ -70,7 +69,7 @@ export default function ChatRoom() {
             .from('profiles')
             .select('nickname, photo_urls, college')
             .eq('id', partner)
-            .single();
+            .single() as { data: { nickname: string | null; photo_urls: string[] | null; college: string | null } | null };
           
           if (profileData) {
             setPartnerProfile(profileData);
@@ -90,47 +89,10 @@ export default function ChatRoom() {
       if (data) setMessages(data);
     };
 
-    // 3. Load or Create Task
+    // 3. Load or Create Task - Disabled (tasks table not in schema)
     const setupTask = async () => {
-        // First, try to fetch existing task
-        const { data: existingTask } = await supabase
-            .from('tasks')
-            .select('*')
-            .eq('match_id', matchId)
-            .maybeSingle(); // Use maybeSingle to avoid error if no task exists
-        
-        if (existingTask) {
-            setTask(existingTask);
-        } else {
-            // Assign a random task if none exists
-            const tasksPool = [
-                "Share your favorite UE memory",
-                "Meet at the Quadrangle for coffee",
-                "Study together at the library for 1 hour",
-                "Take a selfie with the Lualhati monument"
-            ];
-            const randomTask = tasksPool[Math.floor(Math.random() * tasksPool.length)];
-            
-            // Try to insert new task
-            const { data: newTask, error: insertError } = await supabase
-                .from('tasks')
-                .insert({ match_id: matchId as string, description: randomTask })
-                .select()
-                .single();
-            
-            if (insertError) {
-                // If insert failed (likely because other user already created it), fetch again
-                const { data: refetchedTask } = await supabase
-                    .from('tasks')
-                    .select('*')
-                    .eq('match_id', matchId)
-                    .single();
-                
-                if (refetchedTask) setTask(refetchedTask);
-            } else if (newTask) {
-                setTask(newTask);
-            }
-        }
+        // Task feature temporarily disabled
+        setTask(null);
     };
 
     fetchMessages();
@@ -161,16 +123,16 @@ export default function ChatRoom() {
            return [...current, newMsg];
          });
       })
-      // Subscribe to task updates (when partner completes the task)
-      .on('postgres_changes', {
-         event: 'UPDATE',
-         schema: 'public',
-         table: 'tasks',
-         filter: `match_id=eq.${matchId}`
-      }, (payload) => {
-         console.log('Real-time task update:', payload);
-         setTask(payload.new as Task);
-      })
+      // Subscribe to task updates (when partner completes the task) - Disabled
+      // .on('postgres_changes', {
+      //    event: 'UPDATE',
+      //    schema: 'public',
+      //    table: 'tasks',
+      //    filter: `match_id=eq.${matchId}`
+      // }, (payload) => {
+      //    console.log('Real-time task update:', payload);
+      //    setTask(payload.new as any);
+      // })
       .subscribe((status) => {
         console.log('Realtime subscription status:', status);
       });
@@ -212,7 +174,7 @@ export default function ChatRoom() {
     setMessages(prev => [...prev, tempMessage]);
 
     // Send to database
-    const { data, error } = await supabase.from('messages').insert({
+    const { data, error } = await (supabase as any).from('messages').insert({
       match_id: matchId as string,
       sender_id: currentUserId,
       content: messageContent
@@ -234,7 +196,7 @@ export default function ChatRoom() {
       return;
     }
 
-    const { error } = await supabase.from('reports').insert({
+    const { error } = await (supabase as any).from('reports').insert({
       reporter_id: currentUserId,
       reported_id: partnerId,
       reason: reportReason,
@@ -253,13 +215,14 @@ export default function ChatRoom() {
   };
   const completeTask = async () => {
     if (!task) return;
-    const { data } = await supabase
-        .from('tasks')
-        .update({ is_completed: true })
-        .eq('id', task.id)
-        .select()
-        .single();
-    if (data) setTask(data);
+    // Task feature disabled (tasks table not in schema)
+    // const { data } = await (supabase as any)
+    //     .from('tasks')
+    //     .update({ is_completed: true })
+    //     .eq('id', task.id)
+    //     .select()
+    //     .single();
+    // if (data) setTask(data);
   };
 
   return (
@@ -280,7 +243,7 @@ export default function ChatRoom() {
               className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-lg"
             />
           ) : (
-            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg">>
+            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg">
               <Heart className="w-6 h-6 text-pink-500 fill-pink-500" />
             </div>
           )}

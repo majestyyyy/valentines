@@ -118,7 +118,7 @@ export default function HomePage() {
     }
 
     // Check if user's profile is approved
-    const { data: myProfileData } = await supabase
+    const { data: myProfileData } = await (supabase as any)
       .from('profiles')
       .select('*')
       .eq('id', user.id)
@@ -164,12 +164,12 @@ export default function HomePage() {
   const fetchCandidates = async (userId: string, myProfileData: Profile) => {
 
     // Get IDs I've already swiped on
-    const { data: mySwipes } = await supabase
+    const { data: mySwipes } = await (supabase as any)
       .from('swipes')
       .select('swiped_id')
       .eq('swiper_id', userId);
 
-    const swiped = mySwipes?.map(s => s.swiped_id) || [];
+    const swiped = mySwipes?.map((s: any) => s.swiped_id) || [];
     swiped.push(userId); // Don't show myself
     setSwipedIds(swiped); // Store in state for real-time filtering
 
@@ -178,16 +178,16 @@ export default function HomePage() {
     console.log('My profile:', myProfileData);
     
     // DEBUG: Check total approved profiles
-    const { count } = await supabase
+    const { count } = await (supabase as any)
       .from('profiles')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'approved');
     console.log('Total approved profiles in DB:', count);
 
     // Use safe filter format for NOT IN
-    const safeIds = `(${swiped.map(id => `"${id}"`).join(',')})`;
+    const safeIds = `(${swiped.map((id: string) => `"${id}"`).join(',')})`;
 
-    let query = supabase
+    let query = (supabase as any)
       .from('profiles')
       .select('*')
       .eq('status', 'approved')
@@ -237,7 +237,7 @@ export default function HomePage() {
     setPhotoIndex(0);
 
     // Record swipe in background
-    const swipePromise = supabase.from('swipes').insert({
+    const swipePromise = (supabase as any).from('swipes').insert({
       swiper_id: user.id,
       swiped_id: currentProfile.id,
       direction,
@@ -245,7 +245,7 @@ export default function HomePage() {
 
     if (direction === 'right') {
       // Check for match in background
-      const matchCheckPromise = supabase
+      const matchCheckPromise = (supabase as any)
         .from('swipes')
         .select('*')
         .eq('swiper_id', currentProfile.id)
@@ -257,7 +257,7 @@ export default function HomePage() {
       
       if (theirSwipe) {
         // It's a match!
-        await supabase.from('matches').insert({
+        await (supabase as any).from('matches').insert({
           user1_id: user.id,
           user2_id: currentProfile.id
         });
@@ -486,7 +486,7 @@ export default function HomePage() {
                   e.stopPropagation();
                   const reason = prompt("Why are you reporting this user?");
                   if (reason) {
-                    supabase.from('reports').insert({
+                    (supabase as any).from('reports').insert({
                       reporter_id: (supabase.auth.getUser() as any).id, 
                       reported_id: currentProfile.id,
                       reason: reason

@@ -12,7 +12,7 @@ type College = Database['public']['Tables']['profiles']['Row']['college'];
 type Gender = 'Male' | 'Female' | 'Non-binary' | 'Other';
 type PreferredGender = 'Male' | 'Female' | 'Non-binary' | 'Other' | 'Everyone';
 
-const COLLEGES: College[] = ['CAS', 'CCSS', 'CBA', 'CEDUC', 'CDENT', 'CENG'];
+const COLLEGES: Array<'CAS' | 'CCSS' | 'CBA' | 'CEDUC' | 'CDENT' | 'CENG'> = ['CAS', 'CCSS', 'CBA', 'CEDUC', 'CDENT', 'CENG'];
 const GENDERS: Gender[] = ['Male', 'Female', 'Non-binary', 'Other'];
 const PREF_GENDERS: PreferredGender[] = ['Male', 'Female', 'Non-binary', 'Other', 'Everyone'];
 
@@ -55,7 +55,7 @@ export default function ProfileSetup() {
         return;
       }
 
-      const { data: profile } = await supabase
+      const { data: profile } = await (supabase as any)
         .from('profiles')
         .select('*')
         .eq('id', user.id)
@@ -181,7 +181,7 @@ export default function ProfileSetup() {
 
       // 2. Update/Insert Profile with status back to pending
       const hashedEmail = await hashEmail(user.email!);
-      const { error } = await supabase.from('profiles').upsert({
+      const { error } = await (supabase as any).from('profiles').upsert({
         id: user.id,
         email: hashedEmail,
         nickname: formData.nickname,

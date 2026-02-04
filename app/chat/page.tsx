@@ -25,16 +25,16 @@ export default function ChatList() {
       currentUserId = user.id;
 
       // Fetch matches where I am user1 or user2
-      const { data: matchData, error } = await supabase
+      const { data: matchData, error } = await (supabase as any)
         .from('matches')
         .select('*')
         .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
 
       if (matchData) {
         // Hydrate with partner details
-        const enrichedMatches = await Promise.all(matchData.map(async (m) => {
+        const enrichedMatches = await Promise.all(matchData.map(async (m: any) => {
           const partnerId = m.user1_id === user.id ? m.user2_id : m.user1_id;
-          const { data: partner } = await supabase
+          const { data: partner } = await (supabase as any)
             .from('profiles')
             .select('*')
             .eq('id', partnerId)

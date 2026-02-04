@@ -1,9 +1,13 @@
 {
-  "/not-found": "app/not-found.js",
-  "/home/page": "app/home/page.js",
-  "/profile-setup/pending/page": "app/profile-setup/pending/page.js",
-  "/profile-setup/page": "app/profile-setup/page.js",
+  "/_not-found": "app/_not-found.js",
+  "/auth/callback/route": "app/auth/callback/route.js",
   "/chat/page": "app/chat/page.js",
+  "/chat/[id]/page": "app/chat/[id]/page.js",
+  "/home/page": "app/home/page.js",
   "/page": "app/page.js",
-  "/admin/page": "app/admin/page.js"
+  "/terms/page": "app/terms/page.js",
+  "/profile-setup/page": "app/profile-setup/page.js",
+  "/profile-setup/pending/page": "app/profile-setup/pending/page.js",
+  "/admin/page": "app/admin/page.js",
+  "/admin/login/page": "app/admin/login/page.js"
 }
