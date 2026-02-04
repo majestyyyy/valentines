@@ -1,9 +1,8 @@
 {
   "/not-found": "app/not-found.js",
   "/page": "app/page.js",
-  "/profile-setup/pending/page": "app/profile-setup/pending/page.js",
-  "/profile-setup/page": "app/profile-setup/page.js",
-  "/home/page": "app/home/page.js",
   "/chat/page": "app/chat/page.js",
-  "/chat/[id]/page": "app/chat/[id]/page.js"
+  "/auth/reset-password/page": "app/auth/reset-password/page.js",
+  "/chat/[id]/page": "app/chat/[id]/page.js",
+  "/home/page": "app/home/page.js"
 }

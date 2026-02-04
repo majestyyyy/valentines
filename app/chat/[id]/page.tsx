@@ -262,9 +262,9 @@ export default function ChatRoom() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-pink-100 via-rose-50 to-red-50">
+    <div className="fixed inset-0 flex flex-col bg-gradient-to-br from-pink-100 via-rose-50 to-red-50 overflow-hidden">
       {/* Header */}
-      <header className="bg-gradient-to-r from-pink-500 to-red-500 p-4 shadow-lg flex items-center gap-3 sticky top-0 z-10">
+      <header className="bg-gradient-to-r from-pink-500 to-red-500 p-4 shadow-lg flex items-center gap-3 flex-shrink-0 z-20">
         <Link href="/chat" className="p-2 hover:bg-white/20 rounded-full transition-colors">
           <ChevronLeft className="text-white" />
         </Link>
@@ -303,7 +303,7 @@ export default function ChatRoom() {
 
       {/* Task Banner */}
       {task && (
-         <div className={`p-4 border-b flex justify-between items-center transition-all duration-300 animate-in slide-in-from-top ${task.is_completed ? 'bg-green-50 border-green-100' : 'bg-gradient-to-r from-orange-50 to-yellow-50 border-orange-100'}`}>
+         <div className={`p-4 border-b flex justify-between items-center transition-all duration-300 animate-in slide-in-from-top flex-shrink-0 z-10 ${task.is_completed ? 'bg-green-50 border-green-100' : 'bg-gradient-to-r from-orange-50 to-yellow-50 border-orange-100'}`}>
              <div className="flex-1">
                  <p className="text-xs font-bold text-orange-600 uppercase mb-1">🎯 Couple Mission</p>
                  <p className={`text-sm font-medium ${task.is_completed ? 'line-through text-gray-400' : 'text-gray-800'}`}>
@@ -351,7 +351,7 @@ export default function ChatRoom() {
         </div>
 
       {/* Input */}
-      <form onSubmit={sendMessage} className="p-4 bg-white border-t border-gray-100 flex gap-3">
+      <form onSubmit={sendMessage} className="p-4 bg-white border-t border-gray-100 flex gap-3 flex-shrink-0 z-10">
         <input
           type="text"
           value={newMessage}

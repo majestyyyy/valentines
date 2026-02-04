@@ -1,9 +1,9 @@
 {
   "pages": {
-    "/page": [
+    "/home/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/page.js"
+      "static/chunks/app/home/page.js"
     ],
     "/layout": [
       "static/chunks/webpack.js",
@@ -11,20 +11,10 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/profile-setup/page": [
+    "/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/profile-setup/page.js"
-    ],
-    "/profile-setup/pending/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/profile-setup/pending/page.js"
-    ],
-    "/home/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/home/page.js"
+      "static/chunks/app/page.js"
     ],
     "/chat/page": [
       "static/chunks/webpack.js",
@@ -35,6 +25,11 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/chat/[id]/page.js"
+    ],
+    "/auth/reset-password/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/auth/reset-password/page.js"
     ],
     "/not-found": [
       "static/chunks/webpack.js",

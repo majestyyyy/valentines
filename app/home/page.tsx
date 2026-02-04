@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/supabase';
 import { Heart, X, MessageCircle } from 'lucide-react';
@@ -19,6 +19,12 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [matchCount, setMatchCount] = useState(0);
   const [swipedIds, setSwipedIds] = useState<string[]>([]);
+  
+  // Swipe gesture state
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     checkProfileAndFetch();
@@ -274,6 +280,70 @@ export default function HomePage() {
     }
   };
 
+  // Touch/Mouse handlers for swipe gestures
+  const handleDragStart = (clientX: number, clientY: number) => {
+    setDragStart({ x: clientX, y: clientY });
+    setIsDragging(true);
+  };
+
+  const handleDragMove = (clientX: number, clientY: number) => {
+    if (!dragStart || !isDragging) return;
+
+    const deltaX = clientX - dragStart.x;
+    const deltaY = clientY - dragStart.y;
+    setDragOffset({ x: deltaX, y: deltaY });
+  };
+
+  const handleDragEnd = () => {
+    if (!isDragging) return;
+
+    const swipeThreshold = 100; // pixels
+    
+    if (Math.abs(dragOffset.x) > swipeThreshold) {
+      // Swipe detected
+      if (dragOffset.x > 0) {
+        // Swiped right (like)
+        handleSwipe('right');
+      } else {
+        // Swiped left (pass)
+        handleSwipe('left');
+      }
+    }
+
+    // Reset drag state
+    setDragStart(null);
+    setDragOffset({ x: 0, y: 0 });
+    setIsDragging(false);
+  };
+
+  // Mouse events
+  const handleMouseDown = (e: React.MouseEvent) => {
+    handleDragStart(e.clientX, e.clientY);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    handleDragMove(e.clientX, e.clientY);
+  };
+
+  const handleMouseUp = () => {
+    handleDragEnd();
+  };
+
+  // Touch events
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    handleDragStart(touch.clientX, touch.clientY);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    handleDragMove(touch.clientX, touch.clientY);
+  };
+
+  const handleTouchEnd = () => {
+    handleDragEnd();
+  };
+
   if (matchPopup) {
     return (
       <div className="fixed inset-0 z-50 bg-gradient-to-br from-ue-red/20 via-pink-500/20 to-purple-500/20 backdrop-blur-md flex flex-col items-center justify-center p-8 text-white overflow-hidden">
@@ -397,8 +467,47 @@ export default function HomePage() {
       <main className="flex-1 relative overflow-hidden">
         {currentProfile ? (
           <div className="relative h-full w-full max-w-lg mx-auto">
-            {/* Card Container */}
-            <div className="absolute inset-4 bg-white rounded-3xl shadow-2xl overflow-hidden">
+            {/* Card Container with Swipe Gestures */}
+            <div 
+              ref={cardRef}
+              className="absolute inset-4 bg-white rounded-3xl shadow-2xl overflow-hidden cursor-grab active:cursor-grabbing select-none touch-none"
+              style={{
+                transform: `translate(${dragOffset.x}px, ${dragOffset.y}px) rotate(${dragOffset.x * 0.05}deg)`,
+                transition: isDragging ? 'none' : 'transform 0.3s ease-out',
+                opacity: isDragging ? 0.9 : 1,
+              }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              
+              {/* Swipe Indicators */}
+              {isDragging && (
+                <>
+                  {/* LIKE indicator */}
+                  <div 
+                    className="absolute top-12 left-8 z-30 pointer-events-none transition-opacity duration-200"
+                    style={{ opacity: Math.max(0, Math.min(1, dragOffset.x / 100)) }}
+                  >
+                    <div className="bg-green-500 text-white px-6 py-3 rounded-xl font-bold text-2xl shadow-xl border-4 border-white rotate-12">
+                      LIKE
+                    </div>
+                  </div>
+                  {/* NOPE indicator */}
+                  <div 
+                    className="absolute top-12 right-8 z-30 pointer-events-none transition-opacity duration-200"
+                    style={{ opacity: Math.max(0, Math.min(1, -dragOffset.x / 100)) }}
+                  >
+                    <div className="bg-red-500 text-white px-6 py-3 rounded-xl font-bold text-2xl shadow-xl border-4 border-white -rotate-12">
+                      NOPE
+                    </div>
+                  </div>
+                </>
+              )}
               
               {/* Photo Indicators */}
               {currentProfile.photo_urls && currentProfile.photo_urls.length > 1 && (

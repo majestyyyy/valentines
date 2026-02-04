@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Heart, Mail, Key, Lock } from 'lucide-react';
 
 export default function LoginPage() {
-  const [mode, setMode] = useState<'login' | 'signup' | 'verify'>('login');
+  const [mode, setMode] = useState<'login' | 'signup' | 'verify' | 'forgot-password'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -150,6 +150,33 @@ export default function LoginPage() {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage('');
+
+    if (!email.trim()) {
+      setMessage('Please enter your email address.');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+
+      if (error) throw error;
+
+      setMessage('Password reset link sent! Check your email.');
+    } catch (err: any) {
+      console.error('Password reset failed:', err);
+      setMessage(err.message || 'Failed to send reset email. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -266,6 +293,62 @@ export default function LoginPage() {
                 onClick={() => {
                   setMode('login');
                   setOtp('');
+                  setMessage('');
+                }}
+                className="w-full text-sm text-gray-500 hover:text-pink-500 transition-colors"
+              >
+                ← Back to login
+              </button>
+            </form>
+          ) : mode === 'forgot-password' ? (
+            // Forgot Password Form
+            <form onSubmit={handleForgotPassword} className="space-y-6">
+              <div className="text-center mb-6">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-pink-100 rounded-full mb-3">
+                  <Key className="w-8 h-8 text-pink-600" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">Forgot Password? 🔑</h2>
+                <p className="text-sm text-gray-500">No worries! We'll send you reset instructions.</p>
+              </div>
+
+              <div>
+                <label htmlFor="forgot-email" className="block text-sm font-bold text-gray-700 mb-2">
+                  UE Email Address
+                </label>
+                <input
+                  type="email"
+                  id="forgot-email"
+                  className="w-full rounded-xl border-2 border-pink-200 px-4 py-4 focus:border-pink-500 focus:outline-none transition-colors text-base"
+                  placeholder="student@ue.edu.ph"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+
+              {message && (
+                <div className={`p-4 rounded-xl text-sm font-medium ${
+                  message.includes('sent') || message.includes('link')
+                    ? 'bg-green-50 text-green-700 border border-green-200' 
+                    : 'bg-red-50 text-red-700 border border-red-200'
+                }`}>
+                  {message}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-full bg-gradient-to-r from-pink-500 to-red-500 px-6 py-4 text-base font-bold text-white shadow-lg hover:shadow-xl focus:outline-none disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
+              >
+                <Mail className="w-5 h-5" />
+                {loading ? 'Sending...' : 'Send Reset Link'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('login');
                   setMessage('');
                 }}
                 className="w-full text-sm text-gray-500 hover:text-pink-500 transition-colors"
@@ -412,6 +495,20 @@ export default function LoginPage() {
                 <Lock className="w-5 h-5" />
                 {loading ? 'Logging in...' : 'Log In'}
               </button>
+
+              <div className="flex items-center justify-between text-sm">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('forgot-password');
+                    setPassword('');
+                    setMessage('');
+                  }}
+                  className="text-pink-600 hover:text-pink-700 font-semibold transition-colors"
+                >
+                  Forgot password?
+                </button>
+              </div>
 
               <button
                 type="button"

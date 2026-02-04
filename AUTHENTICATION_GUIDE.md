@@ -40,6 +40,33 @@ yUE Match! now uses a **password-based authentication system with OTP email veri
      - Approved profile → Home/Swipe page
      - Rejected/Banned → Ban notice
 
+### 🔑 Forgot Password (Password Recovery)
+
+1. **User clicks "Forgot password?"** on login page
+
+2. **Enter email address**:
+   - User provides their registered email
+   - System validates email exists
+
+3. **Reset link sent**:
+   - Password reset link emailed instantly
+   - Link expires after 60 minutes
+   - Link contains secure token
+
+4. **User clicks link**:
+   - Redirected to reset password page
+   - Token validated automatically
+
+5. **Create new password**:
+   - Enter new password (min 6 characters)
+   - Confirm new password
+   - Password updated securely
+
+6. **Auto-redirect**:
+   - Success message displayed
+   - Redirected to login page
+   - Can login with new password
+
 ---
 
 ## Key Features
@@ -51,6 +78,8 @@ yUE Match! now uses a **password-based authentication system with OTP email veri
 - **Email verification**: Ensures valid email addresses
 - **Secure passwords**: Bcrypt hashing by Supabase
 - **Session persistence**: Users stay logged in across sessions
+- **Password recovery**: Easy forgot password flow
+- **Secure reset links**: Time-limited password reset tokens
 
 ### 🔒 Security Features
 
@@ -59,6 +88,8 @@ yUE Match! now uses a **password-based authentication system with OTP email veri
 - **Email validation**: Restricted to @ue.edu.ph domain (configurable)
 - **Session management**: Automatic timeout and refresh
 - **CSRF protection**: Built into Supabase Auth
+- **Secure reset tokens**: One-time use password reset links
+- **Token expiration**: Reset links expire after 60 minutes
 
 ---
 
@@ -68,6 +99,7 @@ yUE Match! now uses a **password-based authentication system with OTP email veri
 - Clean, modern design with gradient backgrounds
 - Email and password input fields
 - "Log In" button
+- **"Forgot password?" link**
 - "Don't have an account? Sign up" link
 
 ### Signup Page
@@ -75,6 +107,19 @@ yUE Match! now uses a **password-based authentication system with OTP email veri
 - Password strength indicator (future enhancement)
 - "Sign Up" button
 - "Already have an account? Log in" link
+
+### Forgot Password Page
+- Email input field
+- "Send Reset Link" button
+- Success/error message display
+- "← Back to login" link
+
+### Reset Password Page
+- New password input field
+- Confirm password input field
+- "Reset Password" button
+- Success confirmation with auto-redirect
+- "← Back to login" link
 
 ### OTP Verification Page
 - 6-digit code input field
@@ -115,6 +160,20 @@ const { data, error } = await supabase.auth.verifyOtp({
 });
 ```
 
+### Forgot Password
+```typescript
+const { error } = await supabase.auth.resetPasswordForEmail(email, {
+  redirectTo: `${window.location.origin}/auth/reset-password`,
+});
+```
+
+### Reset Password
+```typescript
+const { error } = await supabase.auth.updateUser({
+  password: newPassword,
+});
+```
+
 ---
 
 ## Configuration
@@ -150,35 +209,42 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 │   Landing Page  │ (Login)
 └────────┬────────┘
          │
-    ┌────┴────┐
-    │         │
-┌───▼──┐  ┌──▼────┐
-│Login │  │Signup │
-└───┬──┘  └──┬────┘
-    │         │
-    │    ┌────▼─────────┐
-    │    │ OTP Verify   │
-    │    └────┬─────────┘
-    │         │
-    └────┬────┘
-         │
-    ┌────▼──────────┐
-    │ Check Profile │
-    └────┬──────────┘
-         │
-    ┌────┴────────────────┐
-    │                     │
-┌───▼────────┐  ┌────────▼────────┐
-│ No Profile │  │ Has Profile     │
-│ → Setup    │  │ → Status Check  │
-└────────────┘  └────────┬────────┘
-                         │
-         ┌───────────────┼───────────────┐
-         │               │               │
-    ┌────▼────┐    ┌────▼────┐    ┌────▼────┐
-    │ Pending │    │Approved │    │Rejected │
-    │  Page   │    │  Home   │    │  Ban    │
-    └─────────┘    └─────────┘    └─────────┘
+    ┌────┴─────────────┐
+    │         │        │
+┌───▼──┐  ┌──▼────┐ ┌─▼──────────┐
+│Login │  │Signup │ │Forgot Pass │
+└───┬──┘  └──┬────┘ └─┬──────────┘
+    │         │        │
+    │    ┌────▼────────▼──┐
+    │    │  Email Sent    │
+    │    │  (OTP/Reset)   │
+    │    └────┬───────┬───┘
+    │         │       │
+    │    ┌────▼───┐ ┌▼──────────┐
+    │    │OTP Ver │ │Reset Pass │
+    │    └────┬───┘ └┬──────────┘
+    │         │      │
+    └────┬────┘      │
+         │           │
+         └───────┬───┘
+                 │
+            ┌────▼──────────┐
+            │ Check Profile │
+            └────┬──────────┘
+                 │
+            ┌────┴────────────────┐
+            │                     │
+    ┌───────▼──┐  ┌──────────▼────────┐
+    │No Profile│  │   Has Profile     │
+    │ → Setup  │  │   → Status Check  │
+    └──────────┘  └──────────┬────────┘
+                             │
+             ┌───────────────┼───────────────┐
+             │               │               │
+        ┌────▼────┐    ┌────▼────┐    ┌────▼────┐
+        │ Pending │    │Approved │    │Rejected │
+        │  Page   │    │  Home   │    │  Ban    │
+        └─────────┘    └─────────┘    └─────────┘
 ```
 
 ---
@@ -206,6 +272,27 @@ Happy matching! 💕
 yUE Match! Team
 ```
 
+### Password Reset Email
+
+Subject: **Reset your yUE Match! password**
+
+```
+Hi there! 👋
+
+We received a request to reset your yUE Match! password.
+
+Click the link below to create a new password:
+
+    [ Reset My Password ]
+    (This link expires in 60 minutes)
+
+If you didn't request this, please ignore this email.
+Your password will remain unchanged.
+
+Stay safe! 🔒
+yUE Match! Team
+```
+
 ---
 
 ## Password Requirements
@@ -223,7 +310,7 @@ yUE Match! Team
 ## Future Enhancements
 
 ### Planned Features
-- [ ] Password reset/forgot password flow
+- [x] ✅ **Password reset/forgot password flow** - IMPLEMENTED
 - [ ] Password strength indicator
 - [ ] Remember me option
 - [ ] Social login (Google, Facebook)
@@ -244,7 +331,7 @@ yUE Match! Team
 - Check email spelling
 - Verify password is correct
 - Ensure caps lock is off
-- Try password reset (when implemented)
+- **Use "Forgot password?" if you can't remember**
 
 **"Please verify your email first"**
 - Check inbox for verification email
@@ -260,6 +347,19 @@ yUE Match! Team
 **"Password must be at least 6 characters"**
 - Use a longer password
 - Meet minimum security requirements
+
+**"Invalid or expired reset link"**
+- Request a new password reset link
+- Reset links expire after 60 minutes
+- Make sure you're using the latest email
+- Check that you clicked the link from the correct email
+
+**"Failed to send reset email"**
+- Check that your email is registered
+- Verify email spelling
+- Check spam/junk folder
+- Try again in a few minutes
+- Contact support if issue persists
 
 ---
 
