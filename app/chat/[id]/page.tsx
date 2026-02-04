@@ -89,10 +89,47 @@ export default function ChatRoom() {
       if (data) setMessages(data);
     };
 
-    // 3. Load or Create Task - Disabled (tasks table not in schema)
+    // 3. Load or Create Task
     const setupTask = async () => {
-        // Task feature temporarily disabled
-        setTask(null);
+        // First, try to fetch existing task
+        const { data: existingTask } = await (supabase as any)
+            .from('tasks')
+            .select('*')
+            .eq('match_id', matchId)
+            .maybeSingle();
+        
+        if (existingTask) {
+            setTask(existingTask);
+        } else {
+            // Assign a random task if none exists
+            const tasksPool = [
+                "Share your favorite UE memory",
+                "Meet at the Quadrangle for coffee",
+                "Study together at the library for 1 hour",
+                "Take a selfie with the Lualhati monument"
+            ];
+            const randomTask = tasksPool[Math.floor(Math.random() * tasksPool.length)];
+            
+            // Try to insert new task
+            const { data: newTask, error: insertError } = await (supabase as any)
+                .from('tasks')
+                .insert({ match_id: matchId as string, description: randomTask })
+                .select()
+                .single();
+            
+            if (insertError) {
+                // If insert failed (likely because other user already created it), fetch again
+                const { data: refetchedTask } = await (supabase as any)
+                    .from('tasks')
+                    .select('*')
+                    .eq('match_id', matchId)
+                    .single();
+                
+                if (refetchedTask) setTask(refetchedTask);
+            } else if (newTask) {
+                setTask(newTask);
+            }
+        }
     };
 
     fetchMessages();
@@ -123,16 +160,16 @@ export default function ChatRoom() {
            return [...current, newMsg];
          });
       })
-      // Subscribe to task updates (when partner completes the task) - Disabled
-      // .on('postgres_changes', {
-      //    event: 'UPDATE',
-      //    schema: 'public',
-      //    table: 'tasks',
-      //    filter: `match_id=eq.${matchId}`
-      // }, (payload) => {
-      //    console.log('Real-time task update:', payload);
-      //    setTask(payload.new as any);
-      // })
+      // Subscribe to task updates (when partner completes the task)
+      .on('postgres_changes', {
+         event: 'UPDATE',
+         schema: 'public',
+         table: 'tasks',
+         filter: `match_id=eq.${matchId}`
+      }, (payload) => {
+         console.log('Real-time task update:', payload);
+         setTask(payload.new as any);
+      })
       .subscribe((status) => {
         console.log('Realtime subscription status:', status);
       });
@@ -215,14 +252,13 @@ export default function ChatRoom() {
   };
   const completeTask = async () => {
     if (!task) return;
-    // Task feature disabled (tasks table not in schema)
-    // const { data } = await (supabase as any)
-    //     .from('tasks')
-    //     .update({ is_completed: true })
-    //     .eq('id', task.id)
-    //     .select()
-    //     .single();
-    // if (data) setTask(data);
+    const { data } = await (supabase as any)
+        .from('tasks')
+        .update({ is_completed: true })
+        .eq('id', task.id)
+        .select()
+        .single();
+    if (data) setTask(data);
   };
 
   return (

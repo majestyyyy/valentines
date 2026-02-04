@@ -125,6 +125,29 @@ export interface Database {
           created_at?: string
         }
       }
+      tasks: {
+        Row: {
+          id: string
+          match_id: string
+          description: string
+          is_completed: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          match_id: string
+          description: string
+          is_completed?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          match_id?: string
+          description?: string
+          is_completed?: boolean
+          created_at?: string
+        }
+      }
     }
   }
 }

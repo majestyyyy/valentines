@@ -21,11 +21,19 @@ yUE Match! is a mobile-exclusive dating application designed specifically for Un
 
 ### 1. Authentication System
 
-#### 1.1 Email-Based OTP Authentication
-- **One-Time Password (OTP) Login**: Passwordless authentication via email
-- **8-Digit OTP Codes**: Enhanced security with longer verification codes
+#### 1.1 Email & Password Authentication with OTP Verification
+- **Sign Up Flow**: 
+  - User provides email and password
+  - System sends 6-digit OTP to verify email
+  - User enters OTP to complete registration
+  - Account created and email verified
+- **Login Flow**:
+  - User provides email and password
+  - No OTP required for subsequent logins
+  - Instant access after password verification
 - **Email Validation**: Restricted to @ue.edu.ph domain (configurable)
-- **Automatic Account Creation**: First-time users automatically registered
+- **Password Requirements**: Minimum 6 characters
+- **Automatic Account Creation**: First-time users create account with email/password
 - **Session Management**: Secure session handling with automatic expiration
 
 #### 1.2 Custom SMTP Email Delivery
@@ -35,9 +43,11 @@ yUE Match! is a mobile-exclusive dating application designed specifically for Un
 - **Rate Limiting**: Protection against email spam and abuse
 
 #### 1.3 Security & Privacy
+- **Password Hashing**: Secure bcrypt password hashing by Supabase
 - **SHA-256 Email Encryption**: User emails hashed in database for privacy
 - **Plain Text Auth**: Email stored plain in Supabase Auth for OTP delivery
 - **Dual Storage**: Encrypted in profiles table, plain in auth system
+- **OTP Expiration**: Time-limited verification codes for security
 
 ---
 
@@ -301,10 +311,11 @@ yUE Match! is a mobile-exclusive dating application designed specifically for Un
 - **Fallback Support**: Multiple providers for reliability
 
 #### 12.2 Email Templates
-- **OTP Emails**: Branded authentication codes
-- **Welcome Emails**: New user onboarding
+- **OTP Emails**: Email verification codes for new signups
+- **Welcome Emails**: New user onboarding (future)
 - **Approval Notifications**: Profile status updates
 - **Match Notifications**: New match alerts (future)
+- **Password Reset**: Password recovery emails (future)
 
 ---
 
@@ -389,7 +400,9 @@ yUE Match! is a mobile-exclusive dating application designed specifically for Un
 ## Security Features
 
 ### Authentication Security
-- ✅ OTP-based passwordless authentication
+- ✅ Password-based authentication with OTP email verification
+- ✅ Secure password hashing (bcrypt)
+- ✅ OTP verification for new accounts
 - ✅ Session management with automatic expiration
 - ✅ CSRF protection
 - ✅ Email domain validation
