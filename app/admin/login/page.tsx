@@ -103,12 +103,12 @@ export default function AdminAuth() {
           // Profile doesn't exist yet, create it with admin role
           const { error: insertError } = await supabase
             .from('profiles')
-            .upsert({
+            .insert({
               id: data.user.id,
               email: email,
               role: 'admin',
               status: 'approved',
-            });
+            } as any);
 
           if (insertError) {
             console.error('Error creating profile:', insertError);
