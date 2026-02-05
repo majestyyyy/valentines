@@ -50,11 +50,15 @@ export default function LoginPage() {
         // If no profile OR profile exists but is incomplete (missing nickname or photos)
         if (!profile || !profile.nickname || !profile.photo_urls || profile.photo_urls.length === 0) {
           router.push('/profile-setup');
+        } else if (profile.status === 'rejected') {
+          // User is banned - sign them out immediately
+          await supabase.auth.signOut();
+          setMessage('Your account has been banned. You cannot log in.');
+          setLoading(false);
+          return;
         } else if (profile.status === 'pending') {
           router.push('/profile-setup/pending');
         } else if (profile.status === 'approved') {
-          router.push('/home');
-        } else if (profile.status === 'rejected') {
           router.push('/home');
         } else {
           setMessage('Your account status is unclear. Please contact support.');
@@ -238,18 +242,18 @@ export default function LoginPage() {
         if (!profile || !profile.nickname || !profile.photo_urls || profile.photo_urls.length === 0) {
           // New user or incomplete profile, redirect to profile setup
           router.push('/profile-setup');
-        } else if (profile.status === 'banned') {
-          // User is banned - redirect to banned page
-          router.push('/profile-setup/banned');
+        } else if (profile.status === 'rejected') {
+          // User is banned - sign them out immediately
+          await supabase.auth.signOut();
+          setMessage('Your account has been banned. You cannot log in.');
+          setLoading(false);
+          return;
         } else if (profile.status === 'pending') {
           // Profile is complete and under review
           router.push('/profile-setup/pending');
         } else if (profile.status === 'approved') {
           // Approved, go to home
           router.push('/home');
-        } else if (profile.status === 'rejected') {
-          // Rejected - can edit and resubmit
-          router.push('/profile-setup?rejected=true');
         } else {
           setMessage('Your account status is unclear. Please contact support.');
         }

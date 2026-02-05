@@ -91,9 +91,8 @@ export default function ProfilePage() {
         return;
       }
 
-      // Check if user is banned
-      if (profile.status === 'banned') {
-        router.push('/profile-setup/banned');
+      // Check if user is banned (rejected status) - BanGuard will handle it
+      if (profile.status === 'rejected') {
         return;
       }
 
@@ -184,6 +183,19 @@ export default function ProfilePage() {
     setSaving(true);
 
     try {
+      // Check if user is banned before allowing profile update
+      const { data: profileStatus } = await (supabase as any)
+        .from('profiles')
+        .select('status')
+        .eq('id', userId)
+        .single();
+
+      if (profileStatus?.status === 'rejected') {
+        showModal('error', 'Account Banned', 'Your account has been banned. You cannot update your profile.');
+        setSaving(false);
+        return;
+      }
+
       // Check rate limit
       const rateLimitResponse = await fetch('/api/rate-limit', {
         method: 'POST',

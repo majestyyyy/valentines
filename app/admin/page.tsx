@@ -206,7 +206,7 @@ export default function AdminDashboard() {
   };
 
   const handleBan = async (userId: string, reportId: string) => {
-    if(!confirm("Ban this user?")) return;
+    if(!confirm("Ban this user? This will:\n• Set their status to rejected\n• Delete all their matches\n• Sign them out\n• Prevent future access")) return;
     
     // Optimistic update
     setReports(prev => prev.filter(r => r.id !== reportId));
@@ -217,25 +217,48 @@ export default function AdminDashboard() {
       const { data: { user } } = await supabase.auth.getUser();
       const adminId = user?.id;
 
-      // Get all matches for this user
-      const { data: matches } = await (supabaseAdmin as any)
+      // 1. Delete all matches involving this user
+      const { error: matchError } = await (supabaseAdmin as any)
         .from('matches')
-        .select('user1_id, user2_id')
+        .delete()
         .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
 
-      // Delete all matches involving this user
-      if (matches && matches.length > 0) {
-        await (supabaseAdmin as any)
-          .from('matches')
-          .delete()
-          .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
+      if (matchError) {
+        console.error('Error deleting matches:', matchError);
       }
 
-      // Ban the user
-      await (supabaseAdmin as any).from('profiles').update({ status: 'rejected' }).eq('id', userId);
+      // 2. Delete all swipes by and to this user
+      await (supabaseAdmin as any)
+        .from('swipes')
+        .delete()
+        .or(`swiper_id.eq.${userId},swiped_id.eq.${userId}`);
+
+      // 3. Delete all messages from this user
+      await (supabaseAdmin as any)
+        .from('messages')
+        .delete()
+        .eq('sender_id', userId);
+
+      // 4. Delete all tasks for this user
+      await (supabaseAdmin as any)
+        .from('tasks')
+        .delete()
+        .or(`user_id.eq.${userId},partner_id.eq.${userId}`);
+
+      // 5. Ban the user (set status to rejected)
+      const { error: banError } = await (supabaseAdmin as any)
+        .from('profiles')
+        .update({ status: 'rejected' })
+        .eq('id', userId);
+
+      if (banError) {
+        throw banError;
+      }
+
+      // 6. Delete the report
       await (supabaseAdmin as any).from('reports').delete().eq('id', reportId);
 
-      // Log the ban action
+      // 7. Log the ban action
       if (adminId) {
         await logUserBan(adminId, userId, 'User banned from report', reportId);
       }

@@ -249,11 +249,6 @@ export default function HomePage() {
       return;
     }
 
-    if (myProfileData.status === 'banned') {
-      router.push('/profile-setup/banned');
-      return;
-    }
-
     if (myProfileData.status !== 'approved') {
       router.push('/');
       return;

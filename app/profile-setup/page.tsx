@@ -95,9 +95,10 @@ function ProfileSetupContent() {
         .single();
 
       if (profile) {
-        // Check if user is banned - redirect to banned page
-        if (profile.status === 'banned') {
-          router.push('/profile-setup/banned');
+        // Check if user is banned (rejected status) - they cannot create profile again
+        if (profile.status === 'rejected') {
+          // BanGuard will handle showing ban screen
+          setLoadingProfile(false);
           return;
         }
 
@@ -225,6 +226,19 @@ function ProfileSetupContent() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
+
+      // Check if user is banned before allowing profile submission
+      const { data: existingProfile } = await (supabase as any)
+        .from('profiles')
+        .select('status')
+        .eq('id', user.id)
+        .single();
+
+      if (existingProfile?.status === 'rejected') {
+        showModal('error', 'Account Banned', 'Your account has been banned. You cannot create or update your profile.');
+        setLoading(false);
+        return;
+      }
 
       // Check rate limit
       const rateLimitResponse = await fetch('/api/rate-limit', {
