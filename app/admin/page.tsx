@@ -457,15 +457,6 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 
-                {report.details && (
-                  <div className="mb-5">
-                    <p className="text-xs font-bold text-red-700 uppercase mb-2 flex items-center gap-1">
-                      <span>📝</span> Additional Details
-                    </p>
-                    <p className="text-sm bg-gradient-to-br from-red-50 to-orange-50 p-4 rounded-2xl border-2 border-red-200 leading-relaxed">{report.details}</p>
-                  </div>
-                )}
-                
                 <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-5 space-y-3 mb-5 border border-gray-200 shadow-inner">
                   <div className="flex justify-between text-sm">
                     <span className="font-semibold text-gray-600">Reporter:</span>
@@ -660,9 +651,6 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex-1">
                   <p className="font-black text-red-600 text-xl mb-2">{selectedReport.reason}</p>
-                  {selectedReport.details && (
-                    <p className="text-sm text-red-700 bg-white/50 p-3 rounded-xl border border-red-200">{selectedReport.details}</p>
-                  )}
                 </div>
               </div>
             </div>

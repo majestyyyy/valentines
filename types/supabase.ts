@@ -105,7 +105,6 @@ export interface Database {
           reporter_id: string
           reported_id: string
           reason: string
-          details: string | null
           created_at: string
         }
         Insert: {
@@ -113,7 +112,6 @@ export interface Database {
           reporter_id: string
           reported_id: string
           reason: string
-          details?: string | null
           created_at?: string
         }
         Update: {
@@ -121,7 +119,6 @@ export interface Database {
           reporter_id?: string
           reported_id?: string
           reason?: string
-          details?: string | null
           created_at?: string
         }
       }

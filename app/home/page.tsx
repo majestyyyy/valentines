@@ -76,7 +76,7 @@ export default function HomePage() {
           reporter_id: myProfile.id,
           reported_id: currentProfile.id,
           reason: reportReason.trim()
-        });
+        } as any);
 
       if (error) throw error;
 

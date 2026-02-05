@@ -501,7 +501,7 @@ export default function ProfilePage() {
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">College *</label>
                   <select
-                    value={formData.college}
+                    value={formData.college || ''}
                     onChange={(e) => setFormData({ ...formData, college: e.target.value as College })}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-ue-red focus:outline-none transition-colors text-gray-800"
                   >
