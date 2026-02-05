@@ -77,8 +77,38 @@ function ProfileSetupContent() {
 
   // Load existing profile on mount
   useEffect(() => {
-    loadExistingProfile();
+    checkBanStatusFirst();
   }, []);
+
+  const checkBanStatusFirst = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/');
+        return;
+      }
+
+      // Check ban status FIRST before loading anything
+      const { data: profile } = await (supabase as any)
+        .from('profiles')
+        .select('is_banned')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.is_banned === true) {
+        // Banned user - sign out immediately and redirect
+        await supabase.auth.signOut();
+        router.push('/');
+        return;
+      }
+
+      // If not banned, proceed to load profile
+      loadExistingProfile();
+    } catch (error) {
+      console.error('Error checking ban status:', error);
+      loadExistingProfile();
+    }
+  };
 
   const loadExistingProfile = async () => {
     try {
@@ -95,13 +125,6 @@ function ProfileSetupContent() {
         .single();
 
       if (profile) {
-        // Check if user is banned (rejected status) - they cannot create profile again
-        if (profile.status === 'rejected') {
-          // BanGuard will handle showing ban screen
-          setLoadingProfile(false);
-          return;
-        }
-
         setHasExistingProfile(true);
         setFormData({
           nickname: profile.nickname || '',
@@ -118,8 +141,8 @@ function ProfileSetupContent() {
           setPreviews(profile.photo_urls.slice(0, 2).concat([null, null]).slice(0, 2));
         }
 
-        setAcceptedTerms(true); // Already accepted before
-        setConfirmedAge(true); // Already confirmed before
+        // User must manually check age confirmation and terms even when editing
+        // This ensures they re-confirm on every profile update
       }
     } catch (error) {
       console.error('Error loading profile:', error);
@@ -230,13 +253,16 @@ function ProfileSetupContent() {
       // Check if user is banned before allowing profile submission
       const { data: existingProfile } = await (supabase as any)
         .from('profiles')
-        .select('status')
+        .select('status, is_banned')
         .eq('id', user.id)
         .single();
 
-      if (existingProfile?.status === 'rejected') {
-        showModal('error', 'Account Banned', 'Your account has been banned. You cannot create or update your profile.');
+      if (existingProfile?.is_banned) {
+        // Sign out banned user immediately
+        await supabase.auth.signOut();
+        showModal('error', 'Account Banned', 'Your account has been permanently banned.');
         setLoading(false);
+        router.push('/');
         return;
       }
 

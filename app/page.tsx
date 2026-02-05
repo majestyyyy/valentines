@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Heart, Mail, Key, Lock } from 'lucide-react';
 
 export default function LoginPage() {
@@ -14,6 +14,15 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // Check if redirected due to ban
+    const error = searchParams.get('error');
+    if (error === 'banned') {
+      setMessage('Your account has been permanently banned. You cannot access this service.');
+    }
+  }, [searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,19 +52,22 @@ export default function LoginPage() {
         // Check if user has a profile with complete data
         const { data: profile } = await (supabase as any)
           .from('profiles')
-          .select('status, nickname, photo_urls')
+          .select('status, nickname, photo_urls, is_banned')
           .eq('id', data.user.id)
           .single();
+
+        // CRITICAL: Check if user is banned - this MUST be checked FIRST
+        // Even if profile is incomplete, if they are banned, block them
+        if (profile && profile.is_banned === true) {
+          await supabase.auth.signOut();
+          setMessage('Your account has been permanently banned. You cannot access this service.');
+          setLoading(false);
+          return;
+        }
 
         // If no profile OR profile exists but is incomplete (missing nickname or photos)
         if (!profile || !profile.nickname || !profile.photo_urls || profile.photo_urls.length === 0) {
           router.push('/profile-setup');
-        } else if (profile.status === 'rejected') {
-          // User is banned - sign them out immediately
-          await supabase.auth.signOut();
-          setMessage('Your account has been banned. You cannot log in.');
-          setLoading(false);
-          return;
         } else if (profile.status === 'pending') {
           router.push('/profile-setup/pending');
         } else if (profile.status === 'approved') {
@@ -231,28 +243,24 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        // Check if user has a profile with complete data
         const { data: profile } = await (supabase as any)
           .from('profiles')
-          .select('status, nickname, photo_urls')
+          .select('status, nickname, photo_urls, is_banned')
           .eq('id', data.user.id)
           .single();
 
-        // If no profile OR profile exists but is incomplete (missing nickname or photos)
-        if (!profile || !profile.nickname || !profile.photo_urls || profile.photo_urls.length === 0) {
-          // New user or incomplete profile, redirect to profile setup
-          router.push('/profile-setup');
-        } else if (profile.status === 'rejected') {
-          // User is banned - sign them out immediately
+        if (profile?.is_banned) {
           await supabase.auth.signOut();
-          setMessage('Your account has been banned. You cannot log in.');
+          setMessage('Your account has been permanently banned. You cannot access this service.');
           setLoading(false);
           return;
+        }
+
+        if (!profile || !profile.nickname || !profile.photo_urls || profile.photo_urls.length === 0) {
+          router.push('/profile-setup');
         } else if (profile.status === 'pending') {
-          // Profile is complete and under review
           router.push('/profile-setup/pending');
         } else if (profile.status === 'approved') {
-          // Approved, go to home
           router.push('/home');
         } else {
           setMessage('Your account status is unclear. Please contact support.');

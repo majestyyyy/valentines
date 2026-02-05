@@ -25,11 +25,13 @@ export default function BanGuard({ children }: { children: React.ReactNode }) {
         // Check current status
         const { data: profile } = await (supabase as any)
           .from('profiles')
-          .select('status')
+          .select('status, is_banned')
           .eq('id', user.id)
           .single();
 
-        if (profile?.status === 'rejected') {
+        if (profile?.is_banned) {
+          // Immediately sign out banned user
+          await supabase.auth.signOut();
           setIsBanned(true);
         }
 
@@ -41,9 +43,11 @@ export default function BanGuard({ children }: { children: React.ReactNode }) {
             schema: 'public',
             table: 'profiles',
             filter: `id=eq.${user.id}`
-          }, (payload) => {
-            const newProfile = payload.new as { status: string };
-            if (newProfile.status === 'rejected') {
+          }, async (payload) => {
+            const newProfile = payload.new as { status: string; is_banned: boolean };
+            if (newProfile.is_banned) {
+              // Immediately sign out when banned
+              await supabase.auth.signOut();
               setIsBanned(true);
             }
           })
@@ -76,8 +80,8 @@ export default function BanGuard({ children }: { children: React.ReactNode }) {
 
   if (isBanned) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-red-50 to-white p-6">
-        <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full border-4 border-red-500">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-900 via-red-800 to-gray-900 p-6">
+        <div className="bg-white rounded-3xl shadow-2xl p-10 max-w-md w-full border-4 border-red-600">
           <div className="text-center">
             {/* Icon */}
             <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">

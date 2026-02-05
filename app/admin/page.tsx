@@ -49,6 +49,11 @@ export default function AdminDashboard() {
         filter: 'status=eq.pending'
       }, (payload) => {
         setPendingUsers(current => [...current, payload.new as Profile]);
+        // Update stats when new pending user arrives
+        setStats(prev => ({ 
+          ...prev, 
+          pendingApprovals: prev.pendingApprovals + 1 
+        }));
       })
       .on('postgres_changes', {
         event: 'UPDATE',
@@ -56,8 +61,46 @@ export default function AdminDashboard() {
         table: 'profiles'
       }, (payload) => {
         const updated = payload.new as Profile;
+        const old = payload.old as Profile;
+        
+        // Remove from pending list if status changed
         if (updated.status !== 'pending') {
           setPendingUsers(current => current.filter(u => u.id !== updated.id));
+          
+          // Update stats based on status change
+          if (old.status === 'pending') {
+            setStats(prev => ({ 
+              ...prev, 
+              pendingApprovals: Math.max(0, prev.pendingApprovals - 1),
+              totalUsers: updated.status === 'approved' ? prev.totalUsers + 1 : prev.totalUsers
+            }));
+          }
+        } else {
+          // Update existing pending user
+          setPendingUsers(current => 
+            current.map(u => u.id === updated.id ? updated : u)
+          );
+        }
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'profiles'
+      }, (payload) => {
+        const deleted = payload.old as Profile;
+        setPendingUsers(current => current.filter(u => u.id !== deleted.id));
+        
+        // Update stats
+        if (deleted.status === 'pending') {
+          setStats(prev => ({ 
+            ...prev, 
+            pendingApprovals: Math.max(0, prev.pendingApprovals - 1)
+          }));
+        } else if (deleted.status === 'approved') {
+          setStats(prev => ({ 
+            ...prev, 
+            totalUsers: Math.max(0, prev.totalUsers - 1)
+          }));
         }
       })
       .subscribe();
@@ -76,6 +119,11 @@ export default function AdminDashboard() {
         
         if (reporter && reported) {
           setReports(current => [...current, { ...newReport, reporter, reported }]);
+          // Update stats
+          setStats(prev => ({ 
+            ...prev, 
+            openReports: prev.openReports + 1 
+          }));
         }
       })
       .on('postgres_changes', {
@@ -84,14 +132,62 @@ export default function AdminDashboard() {
         table: 'reports'
       }, (payload) => {
         setReports(current => current.filter(r => r.id !== payload.old.id));
+        // Update stats
+        setStats(prev => ({ 
+          ...prev, 
+          openReports: Math.max(0, prev.openReports - 1)
+        }));
+      })
+      .subscribe();
+
+    // Subscribe to real-time updates for matches (for stats)
+    const matchesChannel = supabase
+      .channel('admin-matches')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'matches'
+      }, () => {
+        setStats(prev => ({ 
+          ...prev, 
+          totalMatches: prev.totalMatches + 1 
+        }));
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'matches'
+      }, () => {
+        setStats(prev => ({ 
+          ...prev, 
+          totalMatches: Math.max(0, prev.totalMatches - 1)
+        }));
+      })
+      .subscribe();
+
+    // Subscribe to real-time updates for audit logs (when on logs tab)
+    const auditLogsChannel = supabase
+      .channel('admin-audit-logs')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'audit_logs'
+      }, async (payload) => {
+        // Only update if we're on the logs tab and have loaded logs
+        if (activeTab === 'logs' && auditLogs.length > 0) {
+          // Prepend new log to the list
+          setAuditLogs(current => [payload.new, ...current].slice(0, 100));
+        }
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(profilesChannel);
       supabase.removeChannel(reportsChannel);
+      supabase.removeChannel(matchesChannel);
+      supabase.removeChannel(auditLogsChannel);
     };
-  }, []);
+  }, [activeTab, auditLogs.length]);
   const fetchStats = async () => {
     const { data: users } = await (supabaseAdmin as any).from('profiles').select('status', { count: 'exact' });
     const { data: matches, count: matchCount } = await (supabaseAdmin as any).from('matches').select('*', { count: 'exact', head: true });
@@ -187,7 +283,7 @@ export default function AdminDashboard() {
       const { data: { user } } = await supabase.auth.getUser();
       const adminId = user?.id;
 
-      // Update profile status
+      // Update profile status (do NOT set is_banned for rejections - allows re-editing)
       await (supabaseAdmin as any).from('profiles').update({ status }).eq('id', userId);
 
       // Log the admin action
@@ -206,18 +302,34 @@ export default function AdminDashboard() {
   };
 
   const handleBan = async (userId: string, reportId: string) => {
-    if(!confirm("Ban this user? This will:\n• Set their status to rejected\n• Delete all their matches\n• Sign them out\n• Prevent future access")) return;
+    if(!confirm("Ban this user? This will:\n• Permanently ban their account\n• Delete all their matches and messages\n• Remove all their data\n• Sign them out immediately\n• Show them a ban screen")) return;
     
     // Optimistic update
     setReports(prev => prev.filter(r => r.id !== reportId));
-    setStats(prev => ({ ...prev, openReports: prev.openReports - 1 }));
+    setStats(prev => ({ ...prev, openReports: Math.max(0, prev.openReports - 1) }));
     
     try {
       // Get current admin user
       const { data: { user } } = await supabase.auth.getUser();
       const adminId = user?.id;
 
-      // 1. Delete all matches involving this user
+      console.log('Starting ban process for user:', userId);
+
+      // 1. Ban the user FIRST (set is_banned and status to rejected)
+      // This ensures they get kicked out immediately via BanGuard
+      const { error: banError } = await (supabaseAdmin as any)
+        .from('profiles')
+        .update({ status: 'rejected', is_banned: true })
+        .eq('id', userId);
+
+      if (banError) {
+        console.error('Error banning user:', banError);
+        throw banError;
+      }
+
+      console.log('User banned successfully');
+
+      // 2. Delete all matches involving this user
       const { error: matchError } = await (supabaseAdmin as any)
         .from('matches')
         .delete()
@@ -225,45 +337,82 @@ export default function AdminDashboard() {
 
       if (matchError) {
         console.error('Error deleting matches:', matchError);
+      } else {
+        console.log('Matches deleted');
       }
 
-      // 2. Delete all swipes by and to this user
-      await (supabaseAdmin as any)
+      // 3. Delete all swipes by and to this user
+      const { error: swipesError } = await (supabaseAdmin as any)
         .from('swipes')
         .delete()
         .or(`swiper_id.eq.${userId},swiped_id.eq.${userId}`);
 
-      // 3. Delete all messages from this user
-      await (supabaseAdmin as any)
+      if (swipesError) {
+        console.error('Error deleting swipes:', swipesError);
+      } else {
+        console.log('Swipes deleted');
+      }
+
+      // 4. Delete all messages from this user
+      const { error: messagesError } = await (supabaseAdmin as any)
         .from('messages')
         .delete()
         .eq('sender_id', userId);
 
-      // 4. Delete all tasks for this user
-      await (supabaseAdmin as any)
+      if (messagesError) {
+        console.error('Error deleting messages:', messagesError);
+      } else {
+        console.log('Messages deleted');
+      }
+
+      // 5. Delete all notifications for and from this user
+      const { error: notifError } = await (supabaseAdmin as any)
+        .from('notifications')
+        .delete()
+        .or(`user_id.eq.${userId},from_user_id.eq.${userId}`);
+
+      if (notifError) {
+        console.error('Error deleting notifications:', notifError);
+      } else {
+        console.log('Notifications deleted');
+      }
+
+      // 6. Delete all tasks for this user
+      const { error: tasksError } = await (supabaseAdmin as any)
         .from('tasks')
         .delete()
         .or(`user_id.eq.${userId},partner_id.eq.${userId}`);
 
-      // 5. Ban the user (set status to rejected)
-      const { error: banError } = await (supabaseAdmin as any)
-        .from('profiles')
-        .update({ status: 'rejected' })
-        .eq('id', userId);
-
-      if (banError) {
-        throw banError;
+      if (tasksError) {
+        console.error('Error deleting tasks:', tasksError);
+      } else {
+        console.log('Tasks deleted');
       }
 
-      // 6. Delete the report
-      await (supabaseAdmin as any).from('reports').delete().eq('id', reportId);
+      // 7. Delete all reports involving this user (both as reporter and reported)
+      const { error: reportsError } = await (supabaseAdmin as any)
+        .from('reports')
+        .delete()
+        .or(`reporter_id.eq.${userId},reported_id.eq.${userId}`);
 
-      // 7. Log the ban action
+      if (reportsError) {
+        console.error('Error deleting reports:', reportsError);
+      } else {
+        console.log('Reports deleted');
+      }
+
+      // 8. Log the ban action
       if (adminId) {
         await logUserBan(adminId, userId, 'User banned from report', reportId);
       }
+
+      console.log('Ban process completed successfully');
+      
+      // Show success message
+      alert('User has been permanently banned and all their data has been deleted.');
     } catch (error) {
       console.error('Error banning user:', error);
+      alert('Failed to ban user. Please try again.');
       // Revert on error
       fetchReports();
       fetchStats();
@@ -523,10 +672,13 @@ export default function AdminDashboard() {
                     <span className="text-2xl">⚠️</span>
                   </div>
                   <div className="flex-1">
-                    <p className="font-black text-red-600 text-xl mb-1">{report.reason}</p>
-                    <p className="text-xs text-gray-400 flex items-center gap-1">
+                    <p className="text-xs text-gray-400 flex items-center gap-1 mb-2">
                       <span>📅</span> {new Date(report.created_at).toLocaleString()}
                     </p>
+                    <p className="font-bold text-gray-700 text-sm mb-1">Report Details:</p>
+                    <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 mb-3">
+                      <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{report.reason}</p>
+                    </div>
                   </div>
                 </div>
                 
@@ -811,12 +963,27 @@ export default function AdminDashboard() {
 
             {/* Report Details */}
             <div className="p-6 bg-gradient-to-br from-red-50 to-orange-50 border-b-2 border-red-200">
-              <div className="flex items-start gap-4">
+              <div className="flex items-start gap-4 mb-4">
                 <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
                   <span className="text-2xl">⚠️</span>
                 </div>
                 <div className="flex-1">
-                  <p className="font-black text-red-600 text-xl mb-2">{selectedReport.reason}</p>
+                  <p className="font-bold text-gray-700 text-sm mb-2">Report Reason:</p>
+                  <div className="bg-white border-2 border-red-300 rounded-xl p-4 shadow-inner">
+                    <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{selectedReport.reason}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="bg-white/50 rounded-xl p-3">
+                  <p className="text-xs font-semibold text-gray-600 mb-1">Reporter</p>
+                  <p className="text-sm font-bold text-gray-800">{selectedReport.reporter?.nickname}</p>
+                  <p className="text-xs text-gray-500">{selectedReport.reporter?.email}</p>
+                </div>
+                <div className="bg-white/50 rounded-xl p-3">
+                  <p className="text-xs font-semibold text-gray-600 mb-1">Reported User</p>
+                  <p className="text-sm font-bold text-red-600">{selectedReport.reported?.nickname}</p>
+                  <p className="text-xs text-gray-500">{selectedReport.reported?.email}</p>
                 </div>
               </div>
             </div>

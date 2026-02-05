@@ -500,13 +500,20 @@ export default function ChatRoom() {
             </p>
           </div>
         </button>
-        <button
-          onClick={() => setShowReportModal(true)}
-          className="p-2 hover:bg-red-50 rounded-full transition-colors group"
-          title="Report user"
-        >
-          <AlertTriangle className="w-5 h-5 text-gray-400 group-hover:text-red-600 transition-colors" />
-        </button>
+        <div className="relative group">
+          <button
+            onClick={() => setShowReportModal(true)}
+            className="p-2 hover:bg-red-50 rounded-full transition-colors group relative"
+            title="Report user"
+          >
+            <AlertTriangle className="w-5 h-5 text-gray-400 group-hover:text-red-600 transition-colors" />
+          </button>
+          {/* Tooltip */}
+          <div className="absolute right-0 top-full mt-2 w-48 bg-gray-900 text-white text-xs rounded-lg p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 shadow-xl">
+            <div className="absolute -top-1 right-3 w-2 h-2 bg-gray-900 rotate-45"></div>
+            Report inappropriate behavior or spam
+          </div>
+        </div>
       </header>
 
       {/* Match Mission Banner */}

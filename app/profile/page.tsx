@@ -91,8 +91,10 @@ export default function ProfilePage() {
         return;
       }
 
-      // Check if user is banned (rejected status) - BanGuard will handle it
-      if (profile.status === 'rejected') {
+      // Check if user is banned - sign out immediately
+      if (profile.is_banned === true) {
+        await supabase.auth.signOut();
+        router.push('/');
         return;
       }
 
@@ -186,11 +188,11 @@ export default function ProfilePage() {
       // Check if user is banned before allowing profile update
       const { data: profileStatus } = await (supabase as any)
         .from('profiles')
-        .select('status')
+        .select('status, is_banned')
         .eq('id', userId)
         .single();
 
-      if (profileStatus?.status === 'rejected') {
+      if (profileStatus?.is_banned) {
         showModal('error', 'Account Banned', 'Your account has been banned. You cannot update your profile.');
         setSaving(false);
         return;
@@ -656,7 +658,7 @@ export default function ProfilePage() {
                 ) : (
                   <>
                     <Save className="w-5 h-5" />
-                    Save Changes
+                    Save
                   </>
                 )}
               </button>
@@ -671,7 +673,7 @@ export default function ProfilePage() {
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
             <div className="flex items-center gap-3 text-yellow-600">
               <Save className="w-8 h-8" />
-              <h2 className="text-2xl font-bold">Save Changes?</h2>
+              <h2 className="text-2xl font-bold">Save</h2>
             </div>
             
             <p className="text-gray-600">

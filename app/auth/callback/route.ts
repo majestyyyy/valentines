@@ -17,9 +17,16 @@ export async function GET(request: Request) {
     if (session) {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('status')
+        .select('status, is_banned')
         .eq('id', session.user.id)
         .single();
+
+      // CRITICAL: Check if user is banned first
+      if (profile?.is_banned === true) {
+        // Sign out banned user immediately
+        await supabase.auth.signOut();
+        return NextResponse.redirect(`${requestUrl.origin}/?error=banned`);
+      }
 
       if (!profile) {
         return NextResponse.redirect(`${requestUrl.origin}/profile-setup`);

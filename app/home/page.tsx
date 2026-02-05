@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/supabase';
-import { Heart, X, MessageCircle, Bell, User } from 'lucide-react';
+import { Heart, X, MessageCircle, Bell, User, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Modal from '@/components/Modal';
@@ -244,8 +244,10 @@ export default function HomePage() {
       return;
     }
 
-    if (myProfileData.status === 'rejected') {
-      router.push('/profile-setup?rejected=true');
+    if (myProfileData.is_banned === true) {
+      // Banned user - sign out immediately
+      await supabase.auth.signOut();
+      router.push('/');
       return;
     }
 
@@ -825,15 +827,23 @@ export default function HomePage() {
               </div>
 
               {/* Report Button */}
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleReportClick();
-                }}
-                className="absolute top-4 right-4 z-30 pointer-events-auto text-xs text-white/70 bg-black/20 backdrop-blur-sm border border-white/20 px-3 py-1.5 rounded-full hover:bg-black/30 transition-colors"
-              >
-                Report
-              </button>
+              <div className="absolute top-4 right-4 z-30 pointer-events-auto group">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleReportClick();
+                  }}
+                  className="text-xs text-white/70 bg-black/20 backdrop-blur-sm border border-white/20 px-3 py-1.5 rounded-full hover:bg-black/30 transition-colors flex items-center gap-1"
+                >
+                  <AlertTriangle className="w-3 h-3" />
+                  Report
+                </button>
+                {/* Tooltip */}
+                <div className="absolute right-0 top-full mt-2 w-48 bg-gray-900 text-white text-xs rounded-lg p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 shadow-xl pointer-events-none">
+                  <div className="absolute -top-1 right-3 w-2 h-2 bg-gray-900 rotate-45"></div>
+                  Report inappropriate behavior or spam
+                </div>
+              </div>
             </div>
 
             {/* Action Buttons */}
