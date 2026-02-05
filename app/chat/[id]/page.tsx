@@ -104,9 +104,11 @@ export default function ChatRoom() {
             // Assign a random task if none exists
             const tasksPool = [
                 "Share your favorite UE memory",
-                "Meet at the Quadrangle for coffee",
-                "Study together at the library for 1 hour",
-                "Take a selfie with the Lualhati monument"
+                "Take a photo while sharing chocolates or candies.",
+                "Visit and participate in the wedding booth",
+                "Lunch Together at the Tan Yan Kee Garden",
+                "Make a heart pose with your hands and take a photo.",
+                "Take a photo wearing matching colors or accessories.",
             ];
             const randomTask = tasksPool[Math.floor(Math.random() * tasksPool.length)];
             

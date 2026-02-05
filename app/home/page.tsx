@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/supabase';
-import { Heart, X, MessageCircle } from 'lucide-react';
+import { Heart, X, MessageCircle, Bell } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -19,6 +19,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [matchCount, setMatchCount] = useState(0);
   const [swipedIds, setSwipedIds] = useState<string[]>([]);
+  const [unreadLikesCount, setUnreadLikesCount] = useState(0);
   
   // Swipe gesture state
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
@@ -28,6 +29,7 @@ export default function HomePage() {
 
   useEffect(() => {
     checkProfileAndFetch();
+    fetchUnreadLikesCount();
     fetchMatchCount();
   }, []);
 
@@ -110,9 +112,27 @@ export default function HomePage() {
       })
       .subscribe();
 
+    // Subscribe to new notifications (likes)
+    const notifChannel = supabase
+      .channel('notifications-updates')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications'
+      }, (payload) => {
+        const newNotif = payload.new as Database['public']['Tables']['notifications']['Row'];
+        
+        // Update unread count if this is for current user and is a like
+        if (newNotif.user_id === currentUserId && newNotif.type === 'like') {
+          fetchUnreadLikesCount();
+        }
+      })
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
       supabase.removeChannel(matchChannel);
+      supabase.removeChannel(notifChannel);
     };
   }, [myProfile, currentProfile, swipedIds]);
 
@@ -165,6 +185,20 @@ export default function HomePage() {
       .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
 
     setMatchCount(matches?.length || 0);
+  };
+
+  const fetchUnreadLikesCount = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: notifications } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('type', 'like')
+      .eq('is_read', false);
+
+    setUnreadLikesCount(notifications?.length || 0);
   };
 
   const fetchCandidates = async (userId: string, myProfileData: Profile) => {
@@ -237,6 +271,15 @@ export default function HomePage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    // Check if this person liked us first (secret admirer check)
+    const { data: theirLike } = await (supabase as any)
+      .from('swipes')
+      .select('*')
+      .eq('swiper_id', currentProfile.id)
+      .eq('swiped_id', user.id)
+      .eq('direction', 'right')
+      .single();
+
     // Optimistically update swiped IDs
     setSwipedIds(prev => [...prev, currentProfile.id]);
 
@@ -274,9 +317,38 @@ export default function HomePage() {
         
         setMatchPopup(currentProfile);
         // Match count will update via real-time subscription
+        
+        // Mark their like notification as read (remove from secret admirers)
+        await (supabase as any)
+          .from('notifications')
+          .update({ is_read: true })
+          .eq('user_id', user.id)
+          .eq('from_user_id', currentProfile.id)
+          .eq('type', 'like');
       }
     } else {
+      // User swiped LEFT
       await swipePromise;
+      
+      // Check if they were a secret admirer (they liked us but we rejected them)
+      if (theirLike) {
+        // Show lost match notification
+        setMatchPopup({
+          ...currentProfile,
+          _isLostMatch: true
+        } as any);
+        
+        // Mark their like notification as read (remove from secret admirers)
+        await (supabase as any)
+          .from('notifications')
+          .update({ is_read: true })
+          .eq('user_id', user.id)
+          .eq('from_user_id', currentProfile.id)
+          .eq('type', 'like');
+        
+        // Update unread likes count
+        fetchUnreadLikesCount();
+      }
     }
   };
 
@@ -345,6 +417,70 @@ export default function HomePage() {
   };
 
   if (matchPopup) {
+    // Check if this is a "lost match" notification
+    const isLostMatch = (matchPopup as any)._isLostMatch;
+    
+    if (isLostMatch) {
+      // Lost Match Popup (swiped left on someone who liked them)
+      return (
+        <div className="fixed inset-0 z-50 bg-gradient-to-br from-gray-900/90 via-gray-800/90 to-gray-900/90 backdrop-blur-md flex flex-col items-center justify-center p-8 text-white overflow-hidden">
+          {/* Sad Hearts Background */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {[...Array(15)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute text-gray-500 opacity-20"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  fontSize: `${Math.random() * 20 + 15}px`,
+                }}
+              >
+                💔
+              </div>
+            ))}
+          </div>
+
+          {/* Content */}
+          <div className="relative z-10 max-w-md w-full text-center">
+            <div className="text-7xl mb-6 animate-bounce">💔</div>
+            
+            <h1 className="text-4xl font-black text-red-400 mb-4 drop-shadow-lg">
+              Missed Connection!
+            </h1>
+            
+            <p className="text-xl mb-6 text-gray-200">
+              This was a <span className="font-bold text-yellow-400">secret admirer</span> who liked you first!
+            </p>
+            
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-gray-600">
+              <p className="text-gray-300 mb-2">
+                <span className="font-bold text-white">{matchPopup.nickname}</span> from {matchPopup.college}
+              </p>
+              <p className="text-sm text-gray-400">
+                They won't know you passed on them
+              </p>
+            </div>
+
+            <div className="bg-yellow-900/30 border border-yellow-600/50 rounded-xl p-4 mb-8">
+              <p className="text-yellow-200 text-sm flex items-center justify-center gap-2">
+                <span>💡</span>
+                <span>Keep swiping to find your perfect match!</span>
+              </p>
+            </div>
+            
+            <button 
+              onClick={() => setMatchPopup(null)}
+              className="w-full bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 py-4 rounded-full font-bold text-lg transition-all hover:scale-105 shadow-xl"
+            >
+              Continue Swiping
+            </button>
+          </div>
+        </div>
+      );
+    }
+    
+    // Regular Match Popup
     return (
       <div className="fixed inset-0 z-50 bg-gradient-to-br from-ue-red/20 via-pink-500/20 to-purple-500/20 backdrop-blur-md flex flex-col items-center justify-center p-8 text-white overflow-hidden">
         {/* Animated Hearts Background */}
@@ -453,6 +589,14 @@ export default function HomePage() {
           <h1 className="text-xl font-black text-white drop-shadow-md">yUE Match!</h1>
         </div>
         <div className="flex items-center gap-2">
+          <Link href="/likes" className="relative p-2 hover:bg-white/20 rounded-full transition-colors group">
+            <Bell className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+            {unreadLikesCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-yellow-400 text-gray-900 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg animate-pulse">
+                {unreadLikesCount > 9 ? '9+' : unreadLikesCount}
+              </span>
+            )}
+          </Link>
           <Link href="/chat" className="relative p-2 hover:bg-white/20 rounded-full transition-colors group">
             <Heart className="w-6 h-6 text-white fill-white group-hover:scale-110 transition-transform" />
             {matchCount > 0 && (
