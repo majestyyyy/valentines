@@ -8,6 +8,7 @@ import { Heart } from 'lucide-react';
 import { validateMultipleFields } from '@/lib/profanityFilter';
 import { hashEmail } from '@/lib/hashEmail';
 import { sanitizeInput, validateNickname, validateDescription } from '@/lib/security';
+import { validateImageFile, sanitizeFilename } from '@/lib/fileValidation';
 import Modal from '@/components/Modal';
 
 type College = Database['public']['Tables']['profiles']['Row']['college'];
@@ -126,9 +127,19 @@ function ProfileSetupContent() {
     }
   };
 
-  const handlePhotoSelect = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoSelect = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
         const file = e.target.files[0];
+        
+        // Validate file before accepting
+        const validation = await validateImageFile(file);
+        if (!validation.valid) {
+          showModal('error', 'Invalid Image', validation.error || 'File validation failed');
+          // Clear the input
+          e.target.value = '';
+          return;
+        }
+
         const newPhotos = [...photos];
         newPhotos[index] = file;
         setPhotos(newPhotos);
@@ -145,7 +156,8 @@ function ProfileSetupContent() {
     for (let i = 0; i < photos.length; i++) {
         const file = photos[i];
         if (file) {
-            const fileExt = file.name.split('.').pop();
+            const sanitizedName = sanitizeFilename(file.name);
+            const fileExt = sanitizedName.split('.').pop();
             const fileName = `${userId}/${Date.now()}-${i}.${fileExt}`;
             
             const { error: uploadError } = await supabase.storage

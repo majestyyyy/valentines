@@ -28,7 +28,11 @@ export type AuditEventType =
   | 'profile_updated'
   | 'auth_failed'
   | 'rate_limit_exceeded'
-  | 'unauthorized_access';
+  | 'unauthorized_access'
+  | 'session_started'
+  | 'session_ended'
+  | 'session_timeout'
+  | 'suspicious_activity';
 
 /**
  * Audit log entry structure

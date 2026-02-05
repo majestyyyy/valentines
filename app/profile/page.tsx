@@ -7,6 +7,7 @@ import { Database } from '@/types/supabase';
 import { Heart, ArrowLeft, Camera, Save, X, Edit2, LogOut, Trash2 } from 'lucide-react';
 import { validateMultipleFields } from '@/lib/profanityFilter';
 import { sanitizeInput } from '@/lib/security';
+import { validateImageFile, sanitizeFilename } from '@/lib/fileValidation';
 import Modal from '@/components/Modal';
 
 type College = Database['public']['Tables']['profiles']['Row']['college'];
@@ -117,9 +118,19 @@ export default function ProfilePage() {
     }
   };
 
-  const handlePhotoSelect = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoSelect = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      
+      // Validate file before accepting
+      const validation = await validateImageFile(file);
+      if (!validation.valid) {
+        showModal('error', 'Invalid Image', validation.error || 'File validation failed');
+        // Clear the input
+        e.target.value = '';
+        return;
+      }
+
       const newPhotos = [...photos];
       newPhotos[index] = file;
       setPhotos(newPhotos);

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
 import { logAdminAction, logUserBan, getAuditLogs } from '@/lib/auditLog';
+import { endSession } from '@/lib/sessionSecurity';
 import { Database } from '@/types/supabase';
 import { useRouter } from 'next/navigation';
 import { LogOut, User } from 'lucide-react';
@@ -144,7 +145,7 @@ export default function AdminDashboard() {
 
   const handleLogout = async () => {
     if (confirm('Are you sure you want to log out?')) {
-      await supabase.auth.signOut();
+      await endSession(true); // Log admin logout
       router.push('/admin/login');
     }
   };
