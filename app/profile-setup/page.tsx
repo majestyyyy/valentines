@@ -7,6 +7,7 @@ import { Database } from '@/types/supabase';
 import { Heart } from 'lucide-react';
 import { validateMultipleFields } from '@/lib/profanityFilter';
 import { hashEmail } from '@/lib/hashEmail';
+import Modal from '@/components/Modal';
 
 type College = Database['public']['Tables']['profiles']['Row']['college'];
 type Gender = 'Male' | 'Female' | 'Non-binary' | 'Other';
@@ -23,8 +24,38 @@ function ProfileSetupContent() {
   const [loading, setLoading] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [hasExistingProfile, setHasExistingProfile] = useState(false);
+  const [showGuidelines, setShowGuidelines] = useState(true);
+  const [guidelinesAccepted, setGuidelinesAccepted] = useState({
+    respectful: false,
+    noSpam: false,
+    noHarassment: false,
+    authenticity: false,
+    privacy: false
+  });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [confirmedAge, setConfirmedAge] = useState(false);
+  
+  // Modal state
+  const [modal, setModal] = useState<{
+    isOpen: boolean;
+    type: 'info' | 'success' | 'error' | 'warning';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: ''
+  });
+
+  const showModal = (type: 'info' | 'success' | 'error' | 'warning', title: string, message: string) => {
+    setModal({ isOpen: true, type, title, message });
+  };
+
+  const closeModal = () => {
+    setModal({ ...modal, isOpen: false });
+  };
+
   const [formData, setFormData] = useState({
     nickname: '',
     college: 'CCSS' as College,
@@ -62,6 +93,12 @@ function ProfileSetupContent() {
         .single();
 
       if (profile) {
+        // Check if user is banned - redirect to banned page
+        if (profile.status === 'banned') {
+          router.push('/profile-setup/banned');
+          return;
+        }
+
         setHasExistingProfile(true);
         setFormData({
           nickname: profile.nickname || '',
@@ -133,17 +170,17 @@ function ProfileSetupContent() {
     e.preventDefault();
 
     if (!photos[0] && !photos[1] && !previews[0] && !previews[1]) {
-      alert("Please upload at least one photo.");
+      showModal('warning', 'Photos Required', 'Please upload at least one photo.');
       return;
     }
 
     if (!confirmedAge) {
-      alert('You must be 18 years old or above to use yUE Match!');
+      showModal('warning', 'Age Verification Required', 'You must be 18 years old or above to use yUE Match!');
       return;
     }
 
     if (!acceptedTerms) {
-      alert('Please accept the Terms of Service and Privacy Policy to continue');
+      showModal('warning', 'Terms Required', 'Please accept the Terms of Service and Privacy Policy to continue');
       return;
     }
 
@@ -155,7 +192,7 @@ function ProfileSetupContent() {
     });
 
     if (profanityError) {
-      alert(profanityError);
+      showModal('error', 'Inappropriate Content', profanityError);
       return;
     }
 
@@ -199,7 +236,7 @@ function ProfileSetupContent() {
 
       router.push('/profile-setup/pending'); // Redirect to pending page to wait for admin approval
     } catch (error) {
-      alert('Error creating profile');
+      showModal('error', 'Profile Creation Failed', 'Error creating profile. Please try again.');
       console.error(error);
     } finally {
       setLoading(false);
@@ -212,6 +249,169 @@ function ProfileSetupContent() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-ue-red border-t-transparent mx-auto mb-4"></div>
           <p className="text-gray-500">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Community Guidelines Screen
+  if (showGuidelines) {
+    const allAccepted = Object.values(guidelinesAccepted).every(v => v);
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-rose-50 to-red-50 pb-20">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-pink-500 to-red-500 shadow-lg p-6">
+          <div className="max-w-2xl mx-auto text-center">
+            <Heart className="w-12 h-12 text-white fill-white mx-auto mb-3" />
+            <h1 className="text-2xl font-black text-white drop-shadow-md">
+              Welcome to yUE Match! 💕
+            </h1>
+            <p className="text-white/90 mt-2">
+              Before we begin, let's review our community guidelines
+            </p>
+          </div>
+        </div>
+
+        <div className="max-w-2xl mx-auto px-4 py-8">
+          <div className="bg-white rounded-2xl shadow-xl p-6 space-y-6">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                Community Guidelines
+              </h2>
+              <p className="text-gray-600">
+                To create a safe and respectful environment for everyone, please agree to follow these rules:
+              </p>
+            </div>
+
+            {/* Guideline 1 */}
+            <label className="flex items-start gap-4 p-4 bg-gradient-to-r from-pink-50 to-red-50 rounded-xl border-2 border-transparent hover:border-pink-200 cursor-pointer transition-all">
+              <input
+                type="checkbox"
+                checked={guidelinesAccepted.respectful}
+                onChange={(e) => setGuidelinesAccepted({ ...guidelinesAccepted, respectful: e.target.checked })}
+                className="mt-1 w-5 h-5 text-ue-red rounded focus:ring-ue-red cursor-pointer"
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-2xl">🤝</span>
+                  <h3 className="font-bold text-gray-800">Be Respectful</h3>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Treat others with kindness and respect. No offensive language, discrimination, or hate speech.
+                </p>
+              </div>
+            </label>
+
+            {/* Guideline 2 */}
+            <label className="flex items-start gap-4 p-4 bg-gradient-to-r from-pink-50 to-red-50 rounded-xl border-2 border-transparent hover:border-pink-200 cursor-pointer transition-all">
+              <input
+                type="checkbox"
+                checked={guidelinesAccepted.noSpam}
+                onChange={(e) => setGuidelinesAccepted({ ...guidelinesAccepted, noSpam: e.target.checked })}
+                className="mt-1 w-5 h-5 text-ue-red rounded focus:ring-ue-red cursor-pointer"
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-2xl">🚫</span>
+                  <h3 className="font-bold text-gray-800">No Spam or Scams</h3>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Don't send repetitive messages, promotional content, or solicitations. Respect the message rate limit.
+                </p>
+              </div>
+            </label>
+
+            {/* Guideline 3 */}
+            <label className="flex items-start gap-4 p-4 bg-gradient-to-r from-pink-50 to-red-50 rounded-xl border-2 border-transparent hover:border-pink-200 cursor-pointer transition-all">
+              <input
+                type="checkbox"
+                checked={guidelinesAccepted.noHarassment}
+                onChange={(e) => setGuidelinesAccepted({ ...guidelinesAccepted, noHarassment: e.target.checked })}
+                className="mt-1 w-5 h-5 text-ue-red rounded focus:ring-ue-red cursor-pointer"
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-2xl">🛡️</span>
+                  <h3 className="font-bold text-gray-800">No Harassment</h3>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Don't harass, stalk, or make unwanted advances. If someone isn't interested, respect their decision.
+                </p>
+              </div>
+            </label>
+
+            {/* Guideline 4 */}
+            <label className="flex items-start gap-4 p-4 bg-gradient-to-r from-pink-50 to-red-50 rounded-xl border-2 border-transparent hover:border-pink-200 cursor-pointer transition-all">
+              <input
+                type="checkbox"
+                checked={guidelinesAccepted.authenticity}
+                onChange={(e) => setGuidelinesAccepted({ ...guidelinesAccepted, authenticity: e.target.checked })}
+                className="mt-1 w-5 h-5 text-ue-red rounded focus:ring-ue-red cursor-pointer"
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-2xl">✨</span>
+                  <h3 className="font-bold text-gray-800">Be Authentic</h3>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Use real photos and accurate information about yourself. No catfishing or impersonation.
+                </p>
+              </div>
+            </label>
+
+            {/* Guideline 5 */}
+            <label className="flex items-start gap-4 p-4 bg-gradient-to-r from-pink-50 to-red-50 rounded-xl border-2 border-transparent hover:border-pink-200 cursor-pointer transition-all">
+              <input
+                type="checkbox"
+                checked={guidelinesAccepted.privacy}
+                onChange={(e) => setGuidelinesAccepted({ ...guidelinesAccepted, privacy: e.target.checked })}
+                className="mt-1 w-5 h-5 text-ue-red rounded focus:ring-ue-red cursor-pointer"
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-2xl">🔒</span>
+                  <h3 className="font-bold text-gray-800">Protect Privacy</h3>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Don't share personal information (address, phone number) publicly. Keep conversations on the platform initially.
+                </p>
+              </div>
+            </label>
+
+            <div className="bg-yellow-50 border-l-4 border-yellow-500 rounded-lg p-4 mt-6">
+              <div className="flex items-start gap-3">
+                <span className="text-xl">⚠️</span>
+                <div>
+                  <p className="font-semibold text-yellow-800">Violation Consequences</p>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    Violating these guidelines may result in warnings, temporary suspension, or permanent account removal.
+                    We review all reports and take appropriate action.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-red-50 border-l-4 border-red-500 rounded-lg p-4 mt-4">
+              <div className="flex items-start gap-3">
+                <span className="text-xl">📋</span>
+                <div>
+                  <p className="font-semibold text-red-800">Disclaimer</p>
+                  <p className="text-sm text-red-700 mt-1">
+                    yUE Match is a platform to facilitate connections between University of the East students. Any relationship problems, disputes, emotional distress, or other issues that may arise from interactions on this platform are the sole responsibility of the users involved. The developer and the University of the East Student Council are NOT liable for any consequences, damages, or problems resulting from use of this application. Users engage at their own risk and discretion.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowGuidelines(false)}
+              disabled={!allAccepted}
+              className="w-full bg-gradient-to-r from-pink-500 to-red-500 text-white py-4 rounded-full font-bold text-lg shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              {allAccepted ? "I Agree ✓" : "I Agree ✓"}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -435,6 +635,16 @@ function ProfileSetupContent() {
           {loading ? '⏳ Creating Profile...' : '✨ Create My Profile'}
         </button>
       </form>
+
+      {/* Modal for notifications */}
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        type={modal.type}
+        title={modal.title}
+      >
+        {modal.message}
+      </Modal>
       </div>
     </div>
   );

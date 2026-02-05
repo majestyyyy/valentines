@@ -109,8 +109,8 @@ export default function AdminDashboard() {
       return;
     }
     
-    // Get actual email from profile (not from auth which is hashed)
-    const { data: profile } = await supabase
+    // Use supabaseAdmin to bypass RLS and get profile
+    const { data: profile } = await (supabaseAdmin as any)
        .from('profiles')
        .select('role, email')
        .eq('id', user.id)

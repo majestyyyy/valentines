@@ -230,13 +230,56 @@ export default function TermsPage() {
             <div className="space-y-3">
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="font-semibold text-gray-800">General Support:</p>
-                <p className="text-sm text-gray-600">admin@ueheart.app</p>
+                <p className="text-sm text-gray-600">noreply.uewelfare.official@gmail.com</p>
                 <p className="text-xs text-gray-500">Response time: 24-48 hours</p>
               </div>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="font-semibold text-gray-800">Data Privacy Officer:</p>
-                <p className="text-sm text-gray-600">privacy@ueheart.app</p>
-                <p className="text-xs text-gray-500">For privacy rights requests</p>
+            
+            </div>
+          </section>
+
+          <section className="mb-8">
+            <h3 className="text-xl font-bold text-red-600 mb-4">⚠️ IMPORTANT DISCLAIMER ⚠️</h3>
+            <div className="bg-red-50 border-2 border-red-500 rounded-xl p-6">
+              <h4 className="font-bold text-red-800 text-lg mb-3">Limitation of Liability</h4>
+              <p className="text-gray-800 mb-4 leading-relaxed">
+                <strong>yUE Match!</strong> is a platform designed to facilitate connections between University of the East students. 
+                The application serves solely as a medium for communication and does not control or monitor the interactions between users.
+              </p>
+              <div className="bg-white rounded-lg p-4 mb-4">
+                <p className="text-gray-800 mb-3 font-semibold">The Developer and University of the East Student Council are NOT responsible for:</p>
+                <ul className="space-y-2 text-sm text-gray-700">
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-600 font-bold">•</span>
+                    <span>Relationship problems, conflicts, or emotional distress arising from user interactions</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-600 font-bold">•</span>
+                    <span>Any disputes, arguments, or disagreements between matched users</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-600 font-bold">•</span>
+                    <span>Physical, emotional, or psychological harm resulting from in-person meetings</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-600 font-bold">•</span>
+                    <span>Financial losses, scams, or fraudulent activities between users</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-600 font-bold">•</span>
+                    <span>Misrepresentation of information by users on their profiles</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-600 font-bold">•</span>
+                    <span>Any consequences, damages, or problems arising from the use of this application</span>
+                  </li>
+                </ul>
+              </div>
+              <div className="bg-red-100 rounded-lg p-4">
+                <p className="text-red-900 font-semibold text-center">
+                  BY USING THIS PLATFORM, YOU ACKNOWLEDGE AND ACCEPT THAT YOU ENGAGE WITH OTHER USERS 
+                  ENTIRELY AT YOUR OWN RISK AND DISCRETION. Users are responsible for their own safety, 
+                  decisions, and actions both online and offline.
+                </p>
               </div>
             </div>
           </section>
@@ -247,7 +290,7 @@ export default function TermsPage() {
                 By using yUE Match!, you acknowledge that you have read, understood, and agreed to these Terms of Service and Privacy Policy.
               </p>
               <p className="text-sm text-gray-600">
-                Questions or concerns? Contact us at <span className="text-red-600 font-semibold">admin@ueheart.app</span>
+                Questions or concerns? Contact us at <span className="text-red-600 font-semibold">noreply.uewelfare.official@gmail.com</span>
               </p>
             </div>
           </div>

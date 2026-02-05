@@ -7,6 +7,7 @@ import { ChevronLeft, Send, CheckCircle2, Heart, AlertTriangle, X, AlertCircle }
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { validateText } from '@/lib/profanityFilter';
+import Modal from '@/components/Modal';
 
 type Message = Database['public']['Tables']['messages']['Row'];
 
@@ -29,6 +30,27 @@ export default function ChatRoom() {
     college: string | null;
   } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  
+  // Modal state
+  const [modal, setModal] = useState<{
+    isOpen: boolean;
+    type: 'info' | 'success' | 'error' | 'warning';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: ''
+  });
+
+  const showModal = (type: 'info' | 'success' | 'error' | 'warning', title: string, message: string) => {
+    setModal({ isOpen: true, type, title, message });
+  };
+
+  const closeModal = () => {
+    setModal({ ...modal, isOpen: false });
+  };
 
   // Check if user has seen the reminder before
   useEffect(() => {
@@ -64,15 +86,44 @@ export default function ChatRoom() {
             : matchData.user1_id;
           setPartnerId(partner);
           
-          // Fetch partner's profile
+          // Fetch partner's profile with approved snapshot
           const { data: profileData } = await supabase
             .from('profiles')
-            .select('nickname, photo_urls, college')
+            .select('nickname, photo_urls, college, status, approved_nickname, approved_photo_urls, approved_college')
             .eq('id', partner)
-            .single() as { data: { nickname: string | null; photo_urls: string[] | null; college: string | null } | null };
+            .single() as { data: { 
+              nickname: string | null; 
+              photo_urls: string[] | null; 
+              college: string | null; 
+              status: string | null;
+              approved_nickname: string | null;
+              approved_photo_urls: string[] | null;
+              approved_college: string | null;
+            } | null };
           
           if (profileData) {
-            setPartnerProfile(profileData);
+            // If profile is pending, show the approved snapshot (what was last approved)
+            if (profileData.status === 'pending' && profileData.approved_nickname) {
+              setPartnerProfile({
+                nickname: profileData.approved_nickname,
+                photo_urls: profileData.approved_photo_urls,
+                college: profileData.approved_college
+              });
+            } else if (profileData.status === 'approved') {
+              // Show current data if approved
+              setPartnerProfile({
+                nickname: profileData.nickname,
+                photo_urls: profileData.photo_urls,
+                college: profileData.college
+              });
+            } else {
+              // Rejected or no approved snapshot - show placeholder
+              setPartnerProfile({
+                nickname: 'UE Student',
+                photo_urls: null,
+                college: 'UE Student'
+              });
+            }
           }
         }
       }
@@ -91,44 +142,60 @@ export default function ChatRoom() {
 
     // 3. Load or Create Task
     const setupTask = async () => {
-        // First, try to fetch existing task
-        const { data: existingTask } = await (supabase as any)
+        // Fetch existing task - get the LATEST one if multiple exist (order by created_at DESC)
+        const { data: existingTasks, error: fetchError } = await (supabase as any)
             .from('tasks')
             .select('*')
             .eq('match_id', matchId)
-            .maybeSingle();
+            .order('created_at', { ascending: false })
+            .limit(1);
+        
+        if (fetchError) {
+            console.error('Error fetching task:', fetchError);
+        }
+        
+        // Use the latest task if found
+        const existingTask = existingTasks && existingTasks.length > 0 ? existingTasks[0] : null;
         
         if (existingTask) {
+            // Found existing task - use it regardless of completion state
+            console.log('Found existing task:', existingTask);
             setTask(existingTask);
         } else {
-            // Assign a random task if none exists
-            const tasksPool = [
-                "Share your favorite UE memory",
-                "Take a photo while sharing chocolates or candies.",
-                "Visit and participate in the wedding booth",
-                "Lunch Together at the Tan Yan Kee Garden",
-                "Make a heart pose with your hands and take a photo.",
-                "Take a photo wearing matching colors or accessories.",
-            ];
-            const randomTask = tasksPool[Math.floor(Math.random() * tasksPool.length)];
+            // No existing task found - create mission 1 ONLY if no task exists
+            console.log('No existing task found, creating mission 1');
+            const mission1 = "Share your favorite UE memory with each other";
             
-            // Try to insert new task
+            // Try to insert first mission
             const { data: newTask, error: insertError } = await (supabase as any)
                 .from('tasks')
-                .insert({ match_id: matchId as string, description: randomTask })
+                .insert({ 
+                    match_id: matchId as string, 
+                    description: mission1,
+                    mission_number: 1,
+                    is_completed: false
+                })
                 .select()
                 .single();
             
             if (insertError) {
+                console.error('Error inserting task:', insertError);
                 // If insert failed (likely because other user already created it), fetch again
-                const { data: refetchedTask } = await (supabase as any)
+                const { data: refetchedTasks } = await (supabase as any)
                     .from('tasks')
                     .select('*')
                     .eq('match_id', matchId)
-                    .single();
+                    .order('created_at', { ascending: false })
+                    .limit(1);
                 
-                if (refetchedTask) setTask(refetchedTask);
+                const refetchedTask = refetchedTasks && refetchedTasks.length > 0 ? refetchedTasks[0] : null;
+                
+                if (refetchedTask) {
+                    console.log('Refetched task after insert error:', refetchedTask);
+                    setTask(refetchedTask);
+                }
             } else if (newTask) {
+                console.log('Created new task:', newTask);
                 setTask(newTask);
             }
         }
@@ -139,12 +206,7 @@ export default function ChatRoom() {
 
     // 4. Subscribe to real-time updates
     const channel = supabase
-      .channel(`match:${matchId}`, {
-        config: {
-          broadcast: { self: false },
-          presence: { key: currentUserId }
-        }
-      })
+      .channel(`match:${matchId}`)
       // Subscribe to new messages
       .on('postgres_changes', { 
          event: 'INSERT', 
@@ -172,11 +234,29 @@ export default function ChatRoom() {
          console.log('Real-time task update:', payload);
          setTask(payload.new as any);
       })
-      .subscribe((status) => {
+      .on('postgres_changes', {
+         event: 'INSERT',
+         schema: 'public',
+         table: 'tasks',
+         filter: `match_id=eq.${matchId}`
+      }, (payload) => {
+         console.log('Real-time task insert:', payload);
+         setTask(payload.new as any);
+      })
+      .subscribe((status, err) => {
         console.log('Realtime subscription status:', status);
+        if (err) console.error('Realtime subscription error:', err);
+        if (status === 'CHANNEL_ERROR') {
+          console.error('Channel error, attempting to reconnect...');
+          setTimeout(() => {
+            supabase.removeChannel(channel);
+            // Will reconnect on next render due to useEffect
+          }, 1000);
+        }
       });
 
     return () => {
+      console.log('Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
 
@@ -195,8 +275,45 @@ export default function ChatRoom() {
     // Validate for harmful words
     const profanityError = validateText(messageContent, 'Message');
     if (profanityError) {
-      alert(profanityError);
+      showModal('error', 'Inappropriate Content', profanityError);
       return;
+    }
+
+    // Rate limiting: 10 messages per minute
+    const rateLimitKey = `message_spam_${currentUserId}_${matchId}`;
+    const attemptData = localStorage.getItem(rateLimitKey);
+    
+    if (attemptData) {
+      const { attempts, firstAttemptTime } = JSON.parse(attemptData);
+      const now = Date.now();
+      const timeElapsed = now - firstAttemptTime;
+      const oneMinute = 60 * 1000;
+
+      // If within 1 minute window
+      if (timeElapsed < oneMinute) {
+        if (attempts >= 10) {
+          const remainingTime = Math.ceil((oneMinute - timeElapsed) / 1000);
+          showModal('warning', 'Slow Down', `Slow down! You can send more messages in ${remainingTime} second(s).`);
+          return;
+        }
+        // Increment attempts
+        localStorage.setItem(rateLimitKey, JSON.stringify({
+          attempts: attempts + 1,
+          firstAttemptTime
+        }));
+      } else {
+        // Reset counter after 1 minute
+        localStorage.setItem(rateLimitKey, JSON.stringify({
+          attempts: 1,
+          firstAttemptTime: now
+        }));
+      }
+    } else {
+      // First message in this session
+      localStorage.setItem(rateLimitKey, JSON.stringify({
+        attempts: 1,
+        firstAttemptTime: Date.now()
+      }));
     }
 
     setNewMessage(''); // Clear input immediately
@@ -231,7 +348,7 @@ export default function ChatRoom() {
   };
   const submitReport = async () => {
     if (!reportReason.trim()) {
-      alert('Please select a reason for reporting');
+      showModal('warning', 'Select Reason', 'Please select a reason for reporting');
       return;
     }
 
@@ -244,23 +361,58 @@ export default function ChatRoom() {
 
     if (error) {
       console.error('Error submitting report:', error);
-      alert('Failed to submit report. Please try again.');
+      showModal('error', 'Report Failed', 'Failed to submit report. Please try again.');
     } else {
-      alert('Report submitted successfully. Our team will review it.');
+      showModal('success', 'Report Submitted', 'Report submitted successfully. Our team will review it.');
       setShowReportModal(false);
       setReportReason('');
       setReportDetails('');
     }
   };
   const completeTask = async () => {
-    if (!task) return;
-    const { data } = await (supabase as any)
+    if (!task || task.is_completed) return;
+    
+    const currentMissionNumber = task.mission_number || 1;
+    
+    // Only advance to next mission if not on mission 3
+    if (currentMissionNumber < 3) {
+      const nextMissionNumber = currentMissionNumber + 1;
+      let nextMissionDescription = '';
+      
+      if (nextMissionNumber === 2) {
+        nextMissionDescription = "Take a photo together while sharing chocolates or candies 🍫";
+      } else if (nextMissionNumber === 3) {
+        nextMissionDescription = "Visit the Tan Yan Kee Garden together and take a photo 🌸";
+      }
+      
+      // Single update: advance to next mission directly (no intermediate completed state)
+      const { data, error } = await (supabase as any)
+        .from('tasks')
+        .update({
+          description: nextMissionDescription,
+          mission_number: nextMissionNumber,
+          is_completed: false
+        })
+        .eq('id', task.id)
+        .select()
+        .single();
+      
+      if (data) {
+        setTask(data);
+      } else if (error) {
+        console.error('Error updating to next mission:', error);
+      }
+    } else {
+      // Mission 3 - mark as completed and STAY on mission 3
+      const { data } = await (supabase as any)
         .from('tasks')
         .update({ is_completed: true })
         .eq('id', task.id)
         .select()
         .single();
-    if (data) setTask(data);
+      
+      if (data) setTask(data);
+    }
   };
 
   return (
@@ -303,21 +455,45 @@ export default function ChatRoom() {
         </button>
       </header>
 
-      {/* Task Banner */}
+      {/* Match Mission Banner */}
       {task && (
-         <div className={`p-4 border-b flex justify-between items-center transition-all duration-300 animate-in slide-in-from-top flex-shrink-0 z-10 ${task.is_completed ? 'bg-green-50 border-green-100' : 'bg-gradient-to-r from-orange-50 to-yellow-50 border-orange-100'}`}>
+         <div className={`p-5 border-b-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-all duration-300 animate-in slide-in-from-top flex-shrink-0 z-10 shadow-lg ${task.is_completed ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200' : 'bg-gradient-to-r from-pink-100 via-red-50 to-orange-100 border-red-200'}`}>
              <div className="flex-1">
-                 <p className="text-xs font-bold text-orange-600 uppercase mb-1">🎯 Couple Mission</p>
-                 <p className={`text-sm font-medium ${task.is_completed ? 'line-through text-gray-400' : 'text-gray-800'}`}>
+                 <div className="flex items-center gap-2 mb-2">
+                   <span className="text-2xl animate-pulse">💕</span>
+                   <p className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-red-600 uppercase tracking-wide">
+                     Match Mission {task.mission_number || 1}/3
+                   </p>
+                 </div>
+                 <p className={`text-base font-semibold ${task.is_completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
                     {task.description}
                  </p>
+                 {!task.is_completed && (
+                   <p className="text-xs text-gray-600 mt-1">Complete together to strengthen your bond! 💪</p>
+                 )}
+                 {task.is_completed && task.mission_number < 3 && (
+                   <p className="text-xs text-green-700 mt-1 font-medium">✨ Mission accomplished! Loading next mission...</p>
+                 )}
+                 {task.is_completed && task.mission_number === 3 && (
+                   <p className="text-xs text-green-700 mt-1 font-medium">🎉 All missions completed! You make a great team!</p>
+                 )}
              </div>
              <button 
                 onClick={completeTask}
                 disabled={task.is_completed === true}
-                className={`p-2 rounded-full transition-all duration-200 hover:scale-110 active:scale-95 ${task.is_completed ? 'text-green-500 bg-green-100 animate-bounce' : 'text-gray-400 hover:text-green-500 hover:bg-green-50'}`}
+                className={`px-6 py-3 rounded-full font-bold text-sm transition-all duration-200 hover:scale-105 active:scale-95 shadow-md whitespace-nowrap ${task.is_completed ? 'bg-green-500 text-white shadow-green-200 cursor-default' : 'bg-gradient-to-r from-pink-500 to-red-500 text-white hover:shadow-xl hover:shadow-red-200'}`}
              >
-                <CheckCircle2 size={24} className="transition-transform" />
+                {task.is_completed ? (
+                  <span className="flex items-center gap-2">
+                    <CheckCircle2 size={18} />
+                    Completed!
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <CheckCircle2 size={18} />
+                    Mark Done
+                  </span>
+                )}
              </button>
          </div>
       )}
@@ -588,6 +764,16 @@ export default function ChatRoom() {
           </div>
         </div>
       )}
+
+      {/* Modal for notifications */}
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        type={modal.type}
+        title={modal.title}
+      >
+        {modal.message}
+      </Modal>
     </div>
   );
 }

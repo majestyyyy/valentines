@@ -3,9 +3,10 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/supabase';
-import { Heart, X, MessageCircle, Bell } from 'lucide-react';
+import { Heart, X, MessageCircle, Bell, User } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Modal from '@/components/Modal';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -26,6 +27,69 @@ export default function HomePage() {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  
+  // Modal state
+  const [modal, setModal] = useState<{
+    isOpen: boolean;
+    type: 'info' | 'success' | 'error' | 'warning';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: ''
+  });
+
+  // Report modal state
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+
+  const showModal = (type: 'info' | 'success' | 'error' | 'warning', title: string, message: string) => {
+    setModal({ isOpen: true, type, title, message });
+  };
+
+  const closeModal = () => {
+    setModal({ ...modal, isOpen: false });
+  };
+
+  const handleReportClick = () => {
+    setReportReason('');
+    setShowReportModal(true);
+  };
+
+  const submitReport = async () => {
+    if (!reportReason.trim()) {
+      showModal('warning', 'Missing Information', 'Please provide a reason for reporting this user.');
+      return;
+    }
+
+    if (!myProfile || !currentProfile) return;
+
+    setReportSubmitting(true);
+
+    try {
+      const { error } = await supabase
+        .from('reports')
+        .insert({
+          reporter_id: myProfile.id,
+          reported_id: currentProfile.id,
+          reason: reportReason.trim()
+        });
+
+      if (error) throw error;
+
+      setShowReportModal(false);
+      setReportReason('');
+      showModal('success', 'Report Submitted', 'Thank you for your report. Our team will review it shortly.');
+    } catch (error) {
+      console.error('Error submitting report:', error);
+      showModal('error', 'Report Failed', 'Failed to submit report. Please try again.');
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     checkProfileAndFetch();
@@ -162,6 +226,11 @@ export default function HomePage() {
 
     if (myProfileData.status === 'rejected') {
       router.push('/profile-setup?rejected=true');
+      return;
+    }
+
+    if (myProfileData.status === 'banned') {
+      router.push('/profile-setup/banned');
       return;
     }
 
@@ -605,6 +674,9 @@ export default function HomePage() {
               </span>
             )}
           </Link>
+          <Link href="/profile" className="p-2 hover:bg-white/20 rounded-full transition-colors group">
+            <User className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+          </Link>
         </div>
       </header>
 
@@ -741,14 +813,7 @@ export default function HomePage() {
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
-                  const reason = prompt("Why are you reporting this user?");
-                  if (reason) {
-                    (supabase as any).from('reports').insert({
-                      reporter_id: (supabase.auth.getUser() as any).id, 
-                      reported_id: currentProfile.id,
-                      reason: reason
-                    }).then(() => alert("Report submitted"));
-                  }
+                  handleReportClick();
                 }}
                 className="absolute top-4 right-4 z-30 pointer-events-auto text-xs text-white/70 bg-black/20 backdrop-blur-sm border border-white/20 px-3 py-1.5 rounded-full hover:bg-black/30 transition-colors"
               >
@@ -782,6 +847,72 @@ export default function HomePage() {
           </div>
         )}
       </main>
+
+      {/* Modal for notifications */}
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        type={modal.type}
+        title={modal.title}
+      >
+        {modal.message}
+      </Modal>
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-bold text-gray-800">Report User</h3>
+              <button
+                onClick={() => {
+                  setShowReportModal(false);
+                  setReportReason('');
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-600">
+              Please tell us why you're reporting this user. Our team will review your report.
+            </p>
+
+            <textarea
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+              placeholder="Describe the issue (e.g., inappropriate content, harassment, spam)..."
+              rows={4}
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-ue-red focus:outline-none resize-none"
+              maxLength={500}
+            />
+
+            <div className="text-xs text-gray-400 text-right">
+              {reportReason.length}/500
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowReportModal(false);
+                  setReportReason('');
+                }}
+                className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitReport}
+                disabled={reportSubmitting || !reportReason.trim()}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {reportSubmitting ? 'Submitting...' : 'Submit Report'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

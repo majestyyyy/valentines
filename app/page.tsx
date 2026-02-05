@@ -161,12 +161,43 @@ export default function LoginPage() {
       return;
     }
 
+    // Rate limiting: Check if user has exceeded password reset attempts
+    const rateLimitKey = `password_reset_${email}`;
+    const attemptData = localStorage.getItem(rateLimitKey);
+    
+    if (attemptData) {
+      const { count, lastAttempt } = JSON.parse(attemptData);
+      const timeSinceLastAttempt = Date.now() - lastAttempt;
+      const cooldownPeriod = 5 * 60 * 1000; // 5 minutes in milliseconds
+      
+      // If less than 5 minutes since last attempt and already sent 3 times
+      if (timeSinceLastAttempt < cooldownPeriod && count >= 3) {
+        const remainingTime = Math.ceil((cooldownPeriod - timeSinceLastAttempt) / 60000);
+        setMessage(`Too many attempts. Please wait ${remainingTime} minute(s) before trying again.`);
+        setLoading(false);
+        return;
+      }
+      
+      // Reset counter if cooldown period has passed
+      if (timeSinceLastAttempt >= cooldownPeriod) {
+        localStorage.removeItem(rateLimitKey);
+      }
+    }
+
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
       });
 
       if (error) throw error;
+
+      // Update rate limit counter
+      const currentData = localStorage.getItem(rateLimitKey);
+      const newCount = currentData ? JSON.parse(currentData).count + 1 : 1;
+      localStorage.setItem(rateLimitKey, JSON.stringify({
+        count: newCount,
+        lastAttempt: Date.now()
+      }));
 
       setMessage('Password reset link sent! Check your email.');
     } catch (err: any) {
@@ -207,6 +238,9 @@ export default function LoginPage() {
         if (!profile || !profile.nickname || !profile.photo_urls || profile.photo_urls.length === 0) {
           // New user or incomplete profile, redirect to profile setup
           router.push('/profile-setup');
+        } else if (profile.status === 'banned') {
+          // User is banned - redirect to banned page
+          router.push('/profile-setup/banned');
         } else if (profile.status === 'pending') {
           // Profile is complete and under review
           router.push('/profile-setup/pending');
@@ -214,8 +248,8 @@ export default function LoginPage() {
           // Approved, go to home
           router.push('/home');
         } else if (profile.status === 'rejected') {
-          // Rejected/Banned - redirect to home where BanGuard will handle the ban UI
-          router.push('/home');
+          // Rejected - can edit and resubmit
+          router.push('/profile-setup?rejected=true');
         } else {
           setMessage('Your account status is unclear. Please contact support.');
         }

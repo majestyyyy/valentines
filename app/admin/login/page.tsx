@@ -92,56 +92,28 @@ export default function AdminAuth() {
       if (data.user) {
         console.log('User verified:', data.user.id);
         
-        // Check if user is admin
-        const { data: profile, error: profileError } = await supabase
+        // Use supabaseAdmin to bypass RLS and ensure profile exists with admin role
+        console.log('Ensuring admin profile exists...');
+        
+        // Try to upsert the profile with admin role
+        const profileData = {
+          id: data.user.id,
+          email: email,
+          role: 'admin',
+          status: 'approved',
+        };
+        
+        const { error: upsertError } = await (supabaseAdmin as any)
           .from('profiles')
-          .select('role')
-          .eq('id', data.user.id)
-          .single() as { data: { role: string } | null, error: any };
+          .upsert(profileData, { onConflict: 'id' });
 
-        if (profileError) {
-          console.log('Profile not found, creating admin profile');
-          // Profile doesn't exist yet, create it with admin role
-          const profileData = {
-            id: data.user.id,
-            email: email,
-            role: 'admin',
-            status: 'approved',
-          };
-          const { error: insertError } = await (supabaseAdmin as any)
-            .from('profiles')
-            .insert(profileData);
-
-          if (insertError) {
-            console.error('Error creating profile:', insertError);
-            throw insertError;
-          }
-          
-          console.log('Admin profile created, redirecting...');
-          router.push('/admin');
-        } else if (profile?.role === 'admin') {
-          console.log('Existing admin found, redirecting...');
-          router.push('/admin');
-        } else {
-          console.log('Updating user to admin role');
-          // Not an admin, update to admin role
-          const updateData = {
-            role: 'admin',
-            status: 'approved'
-          };
-          const { error: updateError } = await (supabaseAdmin as any)
-            .from('profiles')
-            .update(updateData)
-            .eq('id', data.user.id);
-
-          if (updateError) {
-            console.error('Error updating role:', updateError);
-            throw updateError;
-          }
-          
-          console.log('User promoted to admin, redirecting...');
-          router.push('/admin');
+        if (upsertError) {
+          console.error('Error upserting admin profile:', upsertError);
+          throw upsertError;
         }
+        
+        console.log('Admin profile ensured, redirecting...');
+        router.push('/admin');
       } else {
         throw new Error('No user data returned after verification');
       }

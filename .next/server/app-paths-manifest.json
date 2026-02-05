@@ -1,9 +1,10 @@
 {
-  "/not-found": "app/not-found.js",
-  "/profile-setup/pending/page": "app/profile-setup/pending/page.js",
-  "/page": "app/page.js",
-  "/likes/page": "app/likes/page.js",
+  "/profile/page": "app/profile/page.js",
   "/home/page": "app/home/page.js",
+  "/profile-setup/pending/page": "app/profile-setup/pending/page.js",
+  "/profile-setup/page": "app/profile-setup/page.js",
+  "/page": "app/page.js",
   "/chat/page": "app/chat/page.js",
-  "/profile-setup/page": "app/profile-setup/page.js"
+  "/likes/page": "app/likes/page.js",
+  "/admin/page": "app/admin/page.js"
 }

@@ -6,6 +6,7 @@ import { Database } from '@/types/supabase';
 import { Heart, ArrowLeft, X, Check } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Modal from '@/components/Modal';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -23,6 +24,27 @@ export default function LikesPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [myProfile, setMyProfile] = useState<Profile | null>(null);
+  
+  // Modal state
+  const [modal, setModal] = useState<{
+    isOpen: boolean;
+    type: 'info' | 'success' | 'error' | 'warning';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: ''
+  });
+
+  const showModal = (type: 'info' | 'success' | 'error' | 'warning', title: string, message: string) => {
+    setModal({ isOpen: true, type, title, message });
+  };
+
+  const closeModal = () => {
+    setModal({ ...modal, isOpen: false });
+  };
 
   useEffect(() => {
     fetchNotifications();
@@ -101,7 +123,7 @@ export default function LikesPage() {
       .single();
 
     if (existingSwipe) {
-      alert('You already responded to this person!');
+      showModal('info', 'Already Responded', 'You already responded to this person!');
       return;
     }
 
@@ -130,11 +152,11 @@ export default function LikesPage() {
         });
 
         // Show reveal message with their name
-        alert(`It's a match with ${notif.from_profile.nickname || 'your admirer'}! 💕 Check your messages!`);
+        showModal('success', "It's a Match!", `It's a match with ${notif.from_profile.nickname || 'your admirer'}! 💕 Check your messages!`);
       }
     } else {
       // Passed on them
-      alert('Passed! They won\'t know you saw this.');
+      showModal('info', 'Passed', "Passed! They won't know you saw this.");
     }
 
     // Remove from list
@@ -225,10 +247,7 @@ export default function LikesPage() {
         {/* Likes Section */}
         {likeNotifications.length > 0 && (
           <div>
-            <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600 mb-3 flex items-center gap-2">
-              <span>✨</span>
-              Secret Admirers ({likeNotifications.length})
-            </h2>
+           
             <div className="space-y-3">
               {likeNotifications.map((notif) => (
                 <div
@@ -273,19 +292,8 @@ export default function LikesPage() {
 
                     {/* Teaser message instead of description */}
                     <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg p-4 mb-3 border-2 border-pink-300">
-                      <p className="text-gray-800 text-sm text-center font-semibold mb-2">
+                      <p className="text-gray-800 text-sm text-center font-semibold mb-1">
                         Someone from {notif.from_profile.college || 'your campus'} is interested in you! 💫
-                      </p>
-                      <p className="text-gray-600 text-xs text-center">
-                        Keep swiping to find out who! If you like them back, you'll match instantly. ✨
-                      </p>
-                    </div>
-
-                    {/* Info: No action needed */}
-                    <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
-                      <p className="text-yellow-800 text-xs text-center flex items-center justify-center gap-2">
-                        <span>💡</span>
-                        <span>Continue swiping on the home page to discover your secret admirer!</span>
                       </p>
                     </div>
                   </div>
@@ -315,6 +323,16 @@ export default function LikesPage() {
           </div>
         )}
       </div>
+
+      {/* Modal for notifications */}
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        type={modal.type}
+        title={modal.title}
+      >
+        {modal.message}
+      </Modal>
     </div>
   );
 }
