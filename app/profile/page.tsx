@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Database } from '@/types/supabase';
 import { Heart, ArrowLeft, Camera, Save, X, Edit2, LogOut, Trash2 } from 'lucide-react';
 import { validateMultipleFields } from '@/lib/profanityFilter';
+import { sanitizeInput } from '@/lib/security';
 import Modal from '@/components/Modal';
 
 type College = Database['public']['Tables']['profiles']['Row']['college'];
@@ -172,6 +173,26 @@ export default function ProfilePage() {
     setSaving(true);
 
     try {
+      // Check rate limit
+      const rateLimitResponse = await fetch('/api/rate-limit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          limiterType: 'profile',
+          identifier: userId 
+        })
+      });
+
+      const rateLimitData = await rateLimitResponse.json();
+
+      if (!rateLimitData.allowed) {
+        const resetDate = new Date(rateLimitData.reset);
+        showModal('error', 'Too Many Requests', 
+          `You can only update your profile 3 times per hour. Try again at ${resetDate.toLocaleTimeString()}.`);
+        setSaving(false);
+        return;
+      }
+
       // Upload new photos if they exist
       const photoUrls: string[] = [...existingPhotoUrls];
 
@@ -225,12 +246,22 @@ export default function ProfilePage() {
         .map(h => h.trim())
         .filter(h => h.length > 0);
 
+      // Sanitize user input
+      const sanitizedNickname = sanitizeInput(formData.nickname);
+      const sanitizedDescription = sanitizeInput(formData.description);
+      const sanitizedHobbies = hobbiesArray.map(h => sanitizeInput(h));
+
+      console.log('Original nickname:', formData.nickname);
+      console.log('Sanitized nickname:', sanitizedNickname);
+      console.log('Original description:', formData.description);
+      console.log('Sanitized description:', sanitizedDescription);
+
       const updateData: any = {
-        nickname: formData.nickname,
+        nickname: sanitizedNickname,
         college: formData.college,
         year_level: formData.year_level,
-        hobbies: hobbiesArray,
-        description: formData.description,
+        hobbies: sanitizedHobbies,
+        description: sanitizedDescription,
         gender: formData.gender,
         preferred_gender: formData.preferred_gender,
         photo_urls: cleanedPhotoUrls,

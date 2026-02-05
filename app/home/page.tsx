@@ -70,6 +70,26 @@ export default function HomePage() {
     setReportSubmitting(true);
 
     try {
+      // Check rate limit
+      const rateLimitResponse = await fetch('/api/rate-limit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          limiterType: 'report',
+          identifier: myProfile.id 
+        })
+      });
+
+      const rateLimitData = await rateLimitResponse.json();
+
+      if (!rateLimitData.allowed) {
+        const resetDate = new Date(rateLimitData.reset);
+        showModal('error', 'Too Many Reports', 
+          `You can only submit 5 reports per day. Try again at ${resetDate.toLocaleString()}.`);
+        setReportSubmitting(false);
+        return;
+      }
+
       const { error } = await supabase
         .from('reports')
         .insert({

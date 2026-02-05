@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
+import { logAdminAction, logUserBan, getAuditLogs } from '@/lib/auditLog';
 import { Database } from '@/types/supabase';
 import { useRouter } from 'next/navigation';
 import { LogOut, User } from 'lucide-react';
@@ -12,9 +13,11 @@ type Message = Database['public']['Tables']['messages']['Row'];
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'pending' | 'reports'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'reports' | 'logs'>('pending');
   const [pendingUsers, setPendingUsers] = useState<Profile[]>([]);
   const [reports, setReports] = useState<(Report & { reporter: Profile, reported: Profile })[]>([]);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState('');
@@ -102,6 +105,18 @@ export default function AdminDashboard() {
       openReports: reports.length
     });
   };
+
+  const fetchAuditLogs = async () => {
+    setLoadingLogs(true);
+    try {
+      const logs = await getAuditLogs(100);
+      setAuditLogs(logs);
+    } catch (error) {
+      console.error('Error fetching audit logs:', error);
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
   const checkAdmin = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -167,7 +182,20 @@ export default function AdminDashboard() {
     setStats(prev => ({ ...prev, pendingApprovals: prev.pendingApprovals - 1, totalUsers: status === 'approved' ? prev.totalUsers + 1 : prev.totalUsers }));
     
     try {
+      // Get current admin user
+      const { data: { user } } = await supabase.auth.getUser();
+      const adminId = user?.id;
+
+      // Update profile status
       await (supabaseAdmin as any).from('profiles').update({ status }).eq('id', userId);
+
+      // Log the admin action
+      if (adminId) {
+        await logAdminAction(status, adminId, userId, {
+          action: status === 'approved' ? 'Profile approved' : 'Profile rejected',
+          admin_email: user?.email
+        });
+      }
     } catch (error) {
       console.error('Error updating profile:', error);
       // Revert on error
@@ -184,6 +212,10 @@ export default function AdminDashboard() {
     setStats(prev => ({ ...prev, openReports: prev.openReports - 1 }));
     
     try {
+      // Get current admin user
+      const { data: { user } } = await supabase.auth.getUser();
+      const adminId = user?.id;
+
       // Get all matches for this user
       const { data: matches } = await (supabaseAdmin as any)
         .from('matches')
@@ -201,6 +233,11 @@ export default function AdminDashboard() {
       // Ban the user
       await (supabaseAdmin as any).from('profiles').update({ status: 'rejected' }).eq('id', userId);
       await (supabaseAdmin as any).from('reports').delete().eq('id', reportId);
+
+      // Log the ban action
+      if (adminId) {
+        await logUserBan(adminId, userId, 'User banned from report', reportId);
+      }
     } catch (error) {
       console.error('Error banning user:', error);
       // Revert on error
@@ -349,6 +386,18 @@ export default function AdminDashboard() {
               )}
             </div>
           </button>
+          <button 
+            onClick={() => {
+              setActiveTab('logs');
+              fetchAuditLogs();
+            }}
+            className={`flex-1 py-4 px-6 font-bold rounded-2xl transition-all duration-300 ${activeTab === 'logs' ? 'bg-gradient-to-r from-ue-red to-red-600 text-white shadow-xl scale-105' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'}`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-2xl">📋</span>
+              <span>Audit Logs</span>
+            </div>
+          </button>
         </div>
       
       {activeTab === 'pending' && (
@@ -495,6 +544,99 @@ export default function AdminDashboard() {
               </div>
             ))}
           </div>
+      )}
+
+      {activeTab === 'logs' && (
+        <div className="space-y-4">
+          {loadingLogs ? (
+            <div className="bg-white rounded-2xl p-12 text-center shadow-sm">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-ue-red border-t-transparent mx-auto mb-4"></div>
+              <p className="text-gray-500">Loading audit logs...</p>
+            </div>
+          ) : auditLogs.length === 0 ? (
+            <div className="bg-white rounded-2xl p-12 text-center shadow-sm">
+              <div className="text-5xl mb-4">📋</div>
+              <p className="text-gray-700 font-bold text-lg">No audit logs yet</p>
+              <p className="text-sm text-gray-500 mt-1">Admin actions will be tracked here</p>
+            </div>
+          ) : (
+            <>
+              <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-4 text-white shadow-lg mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">🔐</span>
+                  <div>
+                    <h3 className="font-bold text-lg">Security Audit Trail</h3>
+                    <p className="text-sm opacity-90">Last {auditLogs.length} events</p>
+                  </div>
+                </div>
+              </div>
+
+              {auditLogs.map((log: any) => (
+                <div key={log.id} className="bg-white rounded-2xl p-5 shadow-sm border-2 border-gray-100 hover:shadow-md transition-all">
+                  <div className="flex items-start gap-4">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                      log.event_type.includes('ban') ? 'bg-red-100' :
+                      log.event_type.includes('approved') ? 'bg-green-100' :
+                      log.event_type.includes('rejected') ? 'bg-orange-100' :
+                      log.event_type.includes('report') ? 'bg-yellow-100' :
+                      log.event_type.includes('rate_limit') ? 'bg-purple-100' :
+                      'bg-blue-100'
+                    }`}>
+                      <span className="text-2xl">
+                        {log.event_type.includes('ban') ? '🚫' :
+                         log.event_type.includes('approved') ? '✅' :
+                         log.event_type.includes('rejected') ? '❌' :
+                         log.event_type.includes('report') ? '⚠️' :
+                         log.event_type.includes('rate_limit') ? '⏱️' :
+                         '📝'}
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h4 className="font-bold text-gray-800 capitalize">
+                            {log.event_type.replace(/_/g, ' ')}
+                          </h4>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {new Date(log.created_at).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1 text-sm">
+                        {log.user && (
+                          <p className="text-gray-600">
+                            <span className="font-semibold">Admin:</span> {log.user.nickname || log.user.email}
+                          </p>
+                        )}
+                        {log.target && (
+                          <p className="text-gray-600">
+                            <span className="font-semibold">Target:</span> {log.target.nickname || log.target.email}
+                          </p>
+                        )}
+                        {log.details && Object.keys(log.details).length > 0 && (
+                          <details className="mt-2">
+                            <summary className="cursor-pointer text-blue-600 hover:text-blue-700 font-semibold text-xs">
+                              View Details
+                            </summary>
+                            <pre className="mt-2 p-3 bg-gray-50 rounded text-xs overflow-x-auto border border-gray-200">
+                              {JSON.stringify(log.details, null, 2)}
+                            </pre>
+                          </details>
+                        )}
+                        {log.ip_address && (
+                          <p className="text-gray-500 text-xs">
+                            IP: {log.ip_address}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+        </div>
       )}
       </div>
 

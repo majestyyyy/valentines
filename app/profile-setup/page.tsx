@@ -7,6 +7,7 @@ import { Database } from '@/types/supabase';
 import { Heart } from 'lucide-react';
 import { validateMultipleFields } from '@/lib/profanityFilter';
 import { hashEmail } from '@/lib/hashEmail';
+import { sanitizeInput, validateNickname, validateDescription } from '@/lib/security';
 import Modal from '@/components/Modal';
 
 type College = Database['public']['Tables']['profiles']['Row']['college'];
@@ -196,11 +197,42 @@ function ProfileSetupContent() {
       return;
     }
 
+    // Validate input formats
+    if (!validateNickname(formData.nickname)) {
+      showModal('error', 'Invalid Nickname', 'Nickname must be 2-50 characters and contain only letters, numbers, spaces, hyphens, underscores, or apostrophes.');
+      return;
+    }
+
+    if (!validateDescription(formData.description)) {
+      showModal('error', 'Invalid Description', 'Description must be 500 characters or less.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
+
+      // Check rate limit
+      const rateLimitResponse = await fetch('/api/rate-limit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          limiterType: 'profile',
+          identifier: user.id 
+        })
+      });
+
+      const rateLimitData = await rateLimitResponse.json();
+
+      if (!rateLimitData.allowed) {
+        const resetDate = new Date(rateLimitData.reset);
+        showModal('error', 'Too Many Requests', 
+          `You can only submit your profile 3 times per hour. Try again at ${resetDate.toLocaleTimeString()}.`);
+        setLoading(false);
+        return;
+      }
 
       // 1. Upload new photos (if any) or keep existing ones
       let uploadedUrls: string[] = [];
@@ -216,16 +248,26 @@ function ProfileSetupContent() {
         uploadedUrls = previews.filter(p => p !== null) as string[];
       }
 
-      // 2. Update/Insert Profile with status back to pending
+      // 2. Sanitize and prepare profile data
+      const sanitizedNickname = sanitizeInput(formData.nickname);
+      const sanitizedDescription = sanitizeInput(formData.description);
+      const sanitizedHobbies = formData.hobbies.split(',').map(s => sanitizeInput(s.trim()));
+
+      console.log('Original nickname:', formData.nickname);
+      console.log('Sanitized nickname:', sanitizedNickname);
+      console.log('Original description:', formData.description);
+      console.log('Sanitized description:', sanitizedDescription);
+
+      // 3. Update/Insert Profile with status back to pending
       const hashedEmail = await hashEmail(user.email!);
       const { error } = await (supabase as any).from('profiles').upsert({
         id: user.id,
         email: hashedEmail,
-        nickname: formData.nickname,
+        nickname: sanitizedNickname,
         college: formData.college,
         year_level: formData.year_level,
-        hobbies: formData.hobbies.split(',').map(s => s.trim()),
-        description: formData.description,
+        hobbies: sanitizedHobbies,
+        description: sanitizedDescription,
         gender: formData.gender,
         preferred_gender: formData.preferred_gender,
         photo_urls: uploadedUrls,

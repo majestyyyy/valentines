@@ -7,6 +7,7 @@ import { ChevronLeft, Send, CheckCircle2, Heart, AlertTriangle, X, AlertCircle }
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { validateText } from '@/lib/profanityFilter';
+import { sanitizeInput } from '@/lib/security';
 import Modal from '@/components/Modal';
 
 type Message = Database['public']['Tables']['messages']['Row'];
@@ -279,7 +280,30 @@ export default function ChatRoom() {
       return;
     }
 
-    // Rate limiting: 10 messages per minute
+    // Server-side rate limiting check
+    try {
+      const rateLimitResponse = await fetch('/api/rate-limit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          limiterType: 'message',
+          identifier: currentUserId 
+        })
+      });
+
+      const rateLimitData = await rateLimitResponse.json();
+
+      if (!rateLimitData.allowed) {
+        showModal('error', 'Slow Down', 
+          `Too many messages. Wait ${rateLimitData.retryAfter} seconds.`);
+        return;
+      }
+    } catch (error) {
+      console.error('Rate limit check failed:', error);
+      // Continue anyway if rate limit check fails
+    }
+
+    // Client-side rate limiting: 10 messages per minute (backup)
     const rateLimitKey = `message_spam_${currentUserId}_${matchId}`;
     const attemptData = localStorage.getItem(rateLimitKey);
     
@@ -318,12 +342,18 @@ export default function ChatRoom() {
 
     setNewMessage(''); // Clear input immediately
 
+    // Sanitize message content
+    const sanitizedMessage = sanitizeInput(messageContent);
+
+    console.log('Original message:', messageContent);
+    console.log('Sanitized message:', sanitizedMessage);
+
     // Optimistically add message to UI
     const tempMessage: Message = {
       id: `temp-${Date.now()}`,
       match_id: matchId as string,
       sender_id: currentUserId,
-      content: messageContent,
+      content: sanitizedMessage,
       created_at: new Date().toISOString()
     };
     
@@ -333,7 +363,7 @@ export default function ChatRoom() {
     const { data, error } = await (supabase as any).from('messages').insert({
       match_id: matchId as string,
       sender_id: currentUserId,
-      content: messageContent
+      content: sanitizedMessage
     }).select().single();
 
     if (error) {
@@ -352,21 +382,45 @@ export default function ChatRoom() {
       return;
     }
 
-    const { error } = await (supabase as any).from('reports').insert({
-      reporter_id: currentUserId,
-      reported_id: partnerId,
-      reason: reportReason,
-      details: reportDetails.trim() || null,
-    });
+    try {
+      // Check rate limit
+      const rateLimitResponse = await fetch('/api/rate-limit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          limiterType: 'report',
+          identifier: currentUserId 
+        })
+      });
 
-    if (error) {
-      console.error('Error submitting report:', error);
+      const rateLimitData = await rateLimitResponse.json();
+
+      if (!rateLimitData.allowed) {
+        const resetDate = new Date(rateLimitData.reset);
+        showModal('error', 'Too Many Reports', 
+          `You can only submit 5 reports per day. Try again at ${resetDate.toLocaleString()}.`);
+        return;
+      }
+
+      const { error } = await (supabase as any).from('reports').insert({
+        reporter_id: currentUserId,
+        reported_id: partnerId,
+        reason: reportReason,
+        details: reportDetails.trim() || null,
+      });
+
+      if (error) {
+        console.error('Error submitting report:', error);
+        showModal('error', 'Report Failed', 'Failed to submit report. Please try again.');
+      } else {
+        showModal('success', 'Report Submitted', 'Report submitted successfully. Our team will review it.');
+        setShowReportModal(false);
+        setReportReason('');
+        setReportDetails('');
+      }
+    } catch (error) {
+      console.error('Error in submitReport:', error);
       showModal('error', 'Report Failed', 'Failed to submit report. Please try again.');
-    } else {
-      showModal('success', 'Report Submitted', 'Report submitted successfully. Our team will review it.');
-      setShowReportModal(false);
-      setReportReason('');
-      setReportDetails('');
     }
   };
   const completeTask = async () => {
