@@ -8,6 +8,7 @@ import { Heart, ArrowLeft, Camera, Save, X, Edit2, LogOut, Trash2, HelpCircle, M
 import { validateMultipleFields } from '@/lib/profanityFilter';
 import { sanitizeInput } from '@/lib/security';
 import { validateImageFile, sanitizeFilename } from '@/lib/fileValidation';
+import { processImageForUpload } from '@/lib/imageCompression';
 import Modal from '@/components/Modal';
 
 type College = Database['public']['Tables']['profiles']['Row']['college'];
@@ -137,12 +138,28 @@ export default function ProfilePage() {
         return;
       }
 
+      // Compress image silently in background
+      const compressionResult = await processImageForUpload(file);
+      
+      if (!compressionResult.success || !compressionResult.file) {
+        showModal('error', 'Compression Failed', compressionResult.error || 'Failed to process image');
+        e.target.value = '';
+        return;
+      }
+
+      // Log compression stats for debugging
+      if (compressionResult.originalSize && compressionResult.compressedSize) {
+        const originalMB = (compressionResult.originalSize / 1024 / 1024).toFixed(2);
+        const compressedMB = (compressionResult.compressedSize / 1024 / 1024).toFixed(2);
+        console.log(`✅ Image compressed: ${originalMB}MB → ${compressedMB}MB (${compressionResult.compressionRatio}% reduction)`);
+      }
+
       const newPhotos = [...photos];
-      newPhotos[index] = file;
+      newPhotos[index] = compressionResult.file;
       setPhotos(newPhotos);
 
       const newPreviews = [...previews];
-      newPreviews[index] = URL.createObjectURL(file);
+      newPreviews[index] = URL.createObjectURL(compressionResult.file);
       setPreviews(newPreviews);
     }
   };

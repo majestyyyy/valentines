@@ -9,6 +9,7 @@ import { validateMultipleFields } from '@/lib/profanityFilter';
 import { hashEmail } from '@/lib/hashEmail';
 import { sanitizeInput, validateNickname, validateDescription } from '@/lib/security';
 import { validateImageFile, sanitizeFilename } from '@/lib/fileValidation';
+import { processImageForUpload } from '@/lib/imageCompression';
 import Modal from '@/components/Modal';
 
 type College = Database['public']['Tables']['profiles']['Row']['college'];
@@ -195,12 +196,28 @@ function ProfileSetupContent() {
           return;
         }
 
+        // Compress image silently in background
+        const compressionResult = await processImageForUpload(file);
+        
+        if (!compressionResult.success || !compressionResult.file) {
+          showModal('error', 'Compression Failed', compressionResult.error || 'Failed to process image');
+          e.target.value = '';
+          return;
+        }
+
+        // Log compression stats for debugging
+        if (compressionResult.originalSize && compressionResult.compressedSize) {
+          const originalMB = (compressionResult.originalSize / 1024 / 1024).toFixed(2);
+          const compressedMB = (compressionResult.compressedSize / 1024 / 1024).toFixed(2);
+          console.log(`✅ Image compressed: ${originalMB}MB → ${compressedMB}MB (${compressionResult.compressionRatio}% reduction)`);
+        }
+
         const newPhotos = [...photos];
-        newPhotos[index] = file;
+        newPhotos[index] = compressionResult.file;
         setPhotos(newPhotos);
 
         const newPreviews = [...previews];
-        newPreviews[index] = URL.createObjectURL(file);
+        newPreviews[index] = URL.createObjectURL(compressionResult.file);
         setPreviews(newPreviews);
     }
   };
@@ -672,15 +689,22 @@ function ProfileSetupContent() {
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
           <h2 className="text-lg font-bold text-gray-800 mb-4">💭 About You</h2>
           <div>
-            <label className="block text-sm font-bold mb-2 text-gray-700">Hobbies</label>
+            <label className="block text-sm font-bold mb-2 text-gray-700">Hobbies (max 3)</label>
             <input
               type="text"
               placeholder="Gaming, Coding, Basketball"
               className="w-full p-4 border-2 border-gray-200 rounded-xl bg-white focus:border-rose-600 focus:outline-none transition-colors"
               value={formData.hobbies}
-              onChange={e => setFormData({...formData, hobbies: e.target.value})}
+              onChange={e => {
+                const hobbies = e.target.value.split(',').map(h => h.trim()).filter(h => h);
+                if (hobbies.length <= 3) {
+                  setFormData({...formData, hobbies: e.target.value});
+                }
+              }}
             />
-            <p className="text-xs text-gray-400 mt-1">Separate with commas</p>
+            <p className="text-xs text-gray-400 mt-1">
+              {formData.hobbies.split(',').filter(h => h.trim()).length}/3 hobbies (separate with commas)
+            </p>
           </div>
           
           <div>

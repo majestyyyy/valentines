@@ -849,7 +849,7 @@ export default function HomePage() {
                 </div>
 
                 {currentProfile.description && (
-                  <div className="mb-3">
+                  <div className="mb-3 pointer-events-auto">
                     <p className={`text-sm opacity-90 drop-shadow ${
                       isDescriptionExpanded ? '' : 'line-clamp-2'
                     }`}>

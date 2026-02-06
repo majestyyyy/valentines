@@ -8,11 +8,17 @@ export default function MobileGuard({ children }: { children: React.ReactNode })
   const [isMobile, setIsMobile] = useState(true);
   const pathname = usePathname();
   
-  // Initialize showLanding based on current path to prevent flash
-  const [showLanding, setShowLanding] = useState(() => {
-    // Only show landing on root path
-    return pathname === '/';
-  });
+  // Check sessionStorage synchronously during initialization
+  const [showLanding, setShowLanding] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+
+  // Initialize landing state immediately on mount
+  useEffect(() => {
+    // Check if we should show landing
+    const shouldShowLanding = pathname === '/' && !sessionStorage.getItem('hasSeenLanding');
+    setShowLanding(shouldShowLanding);
+    setIsReady(true);
+  }, []);
 
   useEffect(() => {
     // Update landing visibility based on path changes
@@ -25,16 +31,12 @@ export default function MobileGuard({ children }: { children: React.ReactNode })
     
     if (isAppRoute) {
       setShowLanding(false);
-    } else if (pathname === '/') {
-      // Show landing only on root path
+      sessionStorage.setItem('hasSeenLanding', 'true');
+    } else if (pathname === '/' && isReady) {
       const hasSeenLanding = sessionStorage.getItem('hasSeenLanding');
-      if (!hasSeenLanding) {
-        setShowLanding(true);
-      } else {
-        setShowLanding(false);
-      }
+      setShowLanding(!hasSeenLanding);
     }
-  }, [pathname]);
+  }, [pathname, isReady]);
 
   useEffect(() => {
     // Basic check for screen width
@@ -176,8 +178,8 @@ export default function MobileGuard({ children }: { children: React.ReactNode })
     );
   }
 
-  // Mobile Landing Page
-  if (isMobile && showLanding && !isAdminRoute && !isTermsPage) {
+  // Mobile Landing Page - only render after client mount to prevent hydration mismatch
+  if (isReady && isMobile && showLanding && !isAdminRoute && !isTermsPage) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-50 via-red-50 to-pink-50 flex flex-col relative overflow-hidden">
         {/* Decorative Elements */}
@@ -261,6 +263,12 @@ export default function MobileGuard({ children }: { children: React.ReactNode })
         </div>
       </div>
     );
+  }
+
+  // Don't render children until we've determined whether to show landing
+  // This prevents the flash when transitioning
+  if (!isReady) {
+    return null;
   }
 
   return <>{children}</>;
