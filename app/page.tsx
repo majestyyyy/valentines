@@ -153,6 +153,19 @@ export default function LoginPage() {
     }
 
     try {
+      // Check if user already exists
+      const { data: existingProfile } = await (supabase as any)
+        .from('profiles')
+        .select('email')
+        .eq('email', email.toLowerCase())
+        .single();
+
+      if (existingProfile) {
+        setMessage('This email is already registered. Please login instead.');
+        setLoading(false);
+        return;
+      }
+
       // Sign up with email and password
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -479,7 +492,7 @@ export default function LoginPage() {
                   type="email"
                   id="forgot-email"
                   className="w-full rounded-xl border-2 border-rose-200 px-4 py-4 focus:border-rose-600 focus:outline-none transition-colors text-base"
-                  placeholder="student@ue.edu.ph"
+                  placeholder="surname.firstname@ue.edu.ph"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -532,7 +545,7 @@ export default function LoginPage() {
                   type="email"
                   id="signup-email"
                   className="w-full rounded-xl border-2 border-rose-200 px-4 py-4 focus:border-rose-600 focus:outline-none transition-colors text-base"
-                  placeholder="student@ue.edu.ph"
+                  placeholder="surname.firstname@ue.edu.ph"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -619,7 +632,7 @@ export default function LoginPage() {
                   type="email"
                   id="email"
                   className="w-full rounded-xl border-2 border-rose-200 px-4 py-4 focus:border-rose-600 focus:outline-none transition-colors text-base"
-                  placeholder="student@ue.edu.ph"
+                  placeholder="surname.firstname@ue.edu.ph"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required

@@ -234,7 +234,7 @@ export default function AdminAuth() {
                     type="email"
                     id="email"
                     className="w-full rounded-xl border-2 border-gray-200 px-4 py-4 focus:border-ue-red focus:outline-none transition-colors text-base"
-                    placeholder="admin@ue.edu.ph"
+                    placeholder="uemanilausc.official@gmail.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required

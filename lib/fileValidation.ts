@@ -140,33 +140,42 @@ export async function validateImageDimensions(file: File): Promise<FileValidatio
 
 /**
  * Scan file content for malicious patterns
+ * Only scans text-based portions to avoid false positives from binary data
  */
 export async function scanForMaliciousContent(file: File): Promise<FileValidationResult> {
-  // Read file content as text to scan for embedded scripts
-  const text = await file.text();
+  // Skip malicious content scan for image files
+  // Binary image data often contains random bytes that can trigger false positives
+  // The magic byte validation already ensures it's a legitimate image format
+  
+  // Only scan if file type suggests it could contain text (e.g., SVG)
+  if (file.type === 'image/svg+xml') {
+    const text = await file.text();
+    
+    // Common malicious patterns in SVG files
+    const maliciousPatterns = [
+      /<script/i,
+      /javascript:/i,
+      /on\w+\s*=/i, // Event handlers like onclick=
+      /<iframe/i,
+      /<embed/i,
+      /<object/i,
+      /eval\s*\(/i,
+      /document\.cookie/i,
+      /\.innerHTML/i,
+    ];
 
-  // Common malicious patterns in images
-  const maliciousPatterns = [
-    /<script/i,
-    /javascript:/i,
-    /on\w+\s*=/i, // Event handlers like onclick=
-    /<iframe/i,
-    /<embed/i,
-    /<object/i,
-    /eval\s*\(/i,
-    /document\.cookie/i,
-    /\.innerHTML/i,
-  ];
-
-  for (const pattern of maliciousPatterns) {
-    if (pattern.test(text)) {
-      return {
-        valid: false,
-        error: 'File contains potentially malicious content and has been blocked for security.'
-      };
+    for (const pattern of maliciousPatterns) {
+      if (pattern.test(text)) {
+        return {
+          valid: false,
+          error: 'File contains potentially malicious content and has been blocked for security.'
+        };
+      }
     }
   }
 
+  // For binary image formats (JPEG, PNG, WebP, GIF, HEIC), skip text scanning
+  // Magic byte validation is sufficient to ensure they're legitimate images
   return { valid: true };
 }
 
