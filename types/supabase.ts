@@ -21,6 +21,7 @@ export interface Database {
           description: string | null
           gender: 'Male' | 'Female' | 'Non-binary' | 'Other' | null
           preferred_gender: 'Male' | 'Female' | 'Non-binary' | 'Other' | 'Everyone' | null
+          looking_for: 'Romantic' | 'Friendship' | 'Study Buddy' | 'Networking' | 'Everyone' | null
           role: 'admin' | 'user'
           status: 'pending' | 'approved' | 'rejected'
           created_at: string
@@ -36,6 +37,7 @@ export interface Database {
           description?: string | null
           gender?: 'Male' | 'Female' | 'Non-binary' | 'Other' | null
           preferred_gender?: 'Male' | 'Female' | 'Non-binary' | 'Other' | 'Everyone' | null
+          looking_for?: 'Romantic' | 'Friendship' | 'Study Buddy' | 'Networking' | 'Everyone' | null
           role?: 'admin' | 'user'
           status?: 'pending' | 'approved' | 'rejected'
           created_at?: string
@@ -51,6 +53,7 @@ export interface Database {
           description?: string | null
           gender?: 'Male' | 'Female' | 'Non-binary' | 'Other' | null
           preferred_gender?: 'Male' | 'Female' | 'Non-binary' | 'Other' | 'Everyone' | null
+          looking_for?: 'Romantic' | 'Friendship' | 'Study Buddy' | 'Networking' | 'Everyone' | null
           role?: 'admin' | 'user'
           status?: 'pending' | 'approved' | 'rejected'
           created_at?: string

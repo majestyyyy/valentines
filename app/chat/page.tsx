@@ -82,8 +82,8 @@ export default function ChatList() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-rose-50 to-red-50">
-      <header className="p-6 bg-gradient-to-r from-pink-500 to-red-500 shadow-lg flex items-center sticky top-0 z-10">
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-red-50 to-pink-50">
+      <header className="p-6 bg-gradient-to-r from-rose-600 to-red-500 shadow-lg flex items-center sticky top-0 z-10">
         <Link href="/home" className="mr-4 p-2 hover:bg-white/20 rounded-full transition-colors">
           <ChevronLeft className="text-white" />
         </Link>
@@ -96,13 +96,13 @@ export default function ChatList() {
       <div className="p-4 max-w-2xl mx-auto">
         {loading ? (
             <div className="flex justify-center items-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-ue-red border-t-transparent"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-rose-600 border-t-transparent"></div>
             </div>
           ) : (
             <div className="space-y-3">
               {matches.length === 0 && (
                 <div className="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-100">
-                  <Heart className="w-16 h-16 mx-auto mb-4 text-ue-red opacity-20" />
+                  <Heart className="w-16 h-16 mx-auto mb-4 text-rose-600 opacity-20" />
                   <p className="text-gray-500 font-medium">No matches yet</p>
                   <p className="text-sm text-gray-400 mt-1">Keep swiping to find your match!</p>
                 </div>

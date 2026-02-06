@@ -14,10 +14,12 @@ import Modal from '@/components/Modal';
 type College = Database['public']['Tables']['profiles']['Row']['college'];
 type Gender = 'Male' | 'Female' | 'Non-binary' | 'Other';
 type PreferredGender = 'Male' | 'Female' | 'Non-binary' | 'Other' | 'Everyone';
+type LookingFor = 'Romantic' | 'Friendship' | 'Study Buddy' | 'Networking' | 'Everyone';
 
 const COLLEGES: Array<'CAS' | 'CCSS' | 'CBA' | 'CEDUC' | 'CDENT' | 'CENG'> = ['CAS', 'CCSS', 'CBA', 'CEDUC', 'CDENT', 'CENG'];
 const GENDERS: Gender[] = ['Male', 'Female', 'Non-binary', 'Other'];
 const PREF_GENDERS: PreferredGender[] = ['Male', 'Female', 'Non-binary', 'Other', 'Everyone'];
+const LOOKING_FOR_OPTIONS: LookingFor[] = ['Romantic', 'Friendship', 'Study Buddy', 'Networking', 'Everyone'];
 
 function ProfileSetupContent() {
   const router = useRouter();
@@ -66,6 +68,7 @@ function ProfileSetupContent() {
     description: '',
     gender: 'Male' as Gender,
     preferred_gender: 'Everyone' as PreferredGender,
+    looking_for: 'Romantic' as LookingFor,
   });
 
 
@@ -134,6 +137,7 @@ function ProfileSetupContent() {
           description: profile.description || '',
           gender: profile.gender as Gender || 'Male',
           preferred_gender: profile.preferred_gender as PreferredGender || 'Everyone',
+          looking_for: profile.looking_for as LookingFor || 'Romantic',
         });
 
         // Load existing photos as previews
@@ -322,6 +326,7 @@ function ProfileSetupContent() {
         description: sanitizedDescription,
         gender: formData.gender,
         preferred_gender: formData.preferred_gender,
+        looking_for: formData.looking_for,
         photo_urls: uploadedUrls,
         status: 'pending', // Profile must be reviewed by admin before going public
       });
@@ -341,7 +346,7 @@ function ProfileSetupContent() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-ue-red border-t-transparent mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-rose-600 border-t-transparent mx-auto mb-4"></div>
           <p className="text-gray-500">Loading your profile...</p>
         </div>
       </div>
@@ -353,9 +358,9 @@ function ProfileSetupContent() {
     const allAccepted = Object.values(guidelinesAccepted).every(v => v);
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-rose-50 to-red-50 pb-20">
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-red-50 to-pink-50 pb-20">
         {/* Header */}
-        <div className="bg-gradient-to-r from-pink-500 to-red-500 shadow-lg p-6">
+        <div className="bg-gradient-to-r from-rose-600 to-red-500 shadow-lg p-6">
           <div className="max-w-2xl mx-auto text-center">
             <Heart className="w-12 h-12 text-white fill-white mx-auto mb-3" />
             <h1 className="text-2xl font-black text-white drop-shadow-md">
@@ -379,12 +384,12 @@ function ProfileSetupContent() {
             </div>
 
             {/* Guideline 1 */}
-            <label className="flex items-start gap-4 p-4 bg-gradient-to-r from-pink-50 to-red-50 rounded-xl border-2 border-transparent hover:border-pink-200 cursor-pointer transition-all">
+            <label className="flex items-start gap-4 p-4 bg-gradient-to-r from-rose-50 to-red-50 rounded-xl border-2 border-transparent hover:border-rose-200 cursor-pointer transition-all">
               <input
                 type="checkbox"
                 checked={guidelinesAccepted.respectful}
                 onChange={(e) => setGuidelinesAccepted({ ...guidelinesAccepted, respectful: e.target.checked })}
-                className="mt-1 w-5 h-5 text-ue-red rounded focus:ring-ue-red cursor-pointer"
+                className="mt-1 w-5 h-5 text-rose-600 rounded focus:ring-rose-600 cursor-pointer"
               />
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
@@ -398,12 +403,12 @@ function ProfileSetupContent() {
             </label>
 
             {/* Guideline 2 */}
-            <label className="flex items-start gap-4 p-4 bg-gradient-to-r from-pink-50 to-red-50 rounded-xl border-2 border-transparent hover:border-pink-200 cursor-pointer transition-all">
+            <label className="flex items-start gap-4 p-4 bg-gradient-to-r from-rose-50 to-red-50 rounded-xl border-2 border-transparent hover:border-rose-200 cursor-pointer transition-all">
               <input
                 type="checkbox"
                 checked={guidelinesAccepted.noSpam}
                 onChange={(e) => setGuidelinesAccepted({ ...guidelinesAccepted, noSpam: e.target.checked })}
-                className="mt-1 w-5 h-5 text-ue-red rounded focus:ring-ue-red cursor-pointer"
+                className="mt-1 w-5 h-5 text-rose-600 rounded focus:ring-rose-600 cursor-pointer"
               />
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
@@ -417,12 +422,12 @@ function ProfileSetupContent() {
             </label>
 
             {/* Guideline 3 */}
-            <label className="flex items-start gap-4 p-4 bg-gradient-to-r from-pink-50 to-red-50 rounded-xl border-2 border-transparent hover:border-pink-200 cursor-pointer transition-all">
+            <label className="flex items-start gap-4 p-4 bg-gradient-to-r from-rose-50 to-red-50 rounded-xl border-2 border-transparent hover:border-rose-200 cursor-pointer transition-all">
               <input
                 type="checkbox"
                 checked={guidelinesAccepted.noHarassment}
                 onChange={(e) => setGuidelinesAccepted({ ...guidelinesAccepted, noHarassment: e.target.checked })}
-                className="mt-1 w-5 h-5 text-ue-red rounded focus:ring-ue-red cursor-pointer"
+                className="mt-1 w-5 h-5 text-rose-600 rounded focus:ring-rose-600 cursor-pointer"
               />
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
@@ -436,12 +441,12 @@ function ProfileSetupContent() {
             </label>
 
             {/* Guideline 4 */}
-            <label className="flex items-start gap-4 p-4 bg-gradient-to-r from-pink-50 to-red-50 rounded-xl border-2 border-transparent hover:border-pink-200 cursor-pointer transition-all">
+            <label className="flex items-start gap-4 p-4 bg-gradient-to-r from-rose-50 to-red-50 rounded-xl border-2 border-transparent hover:border-rose-200 cursor-pointer transition-all">
               <input
                 type="checkbox"
                 checked={guidelinesAccepted.authenticity}
                 onChange={(e) => setGuidelinesAccepted({ ...guidelinesAccepted, authenticity: e.target.checked })}
-                className="mt-1 w-5 h-5 text-ue-red rounded focus:ring-ue-red cursor-pointer"
+                className="mt-1 w-5 h-5 text-rose-600 rounded focus:ring-rose-600 cursor-pointer"
               />
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
@@ -455,12 +460,12 @@ function ProfileSetupContent() {
             </label>
 
             {/* Guideline 5 */}
-            <label className="flex items-start gap-4 p-4 bg-gradient-to-r from-pink-50 to-red-50 rounded-xl border-2 border-transparent hover:border-pink-200 cursor-pointer transition-all">
+            <label className="flex items-start gap-4 p-4 bg-gradient-to-r from-rose-50 to-red-50 rounded-xl border-2 border-transparent hover:border-rose-200 cursor-pointer transition-all">
               <input
                 type="checkbox"
                 checked={guidelinesAccepted.privacy}
                 onChange={(e) => setGuidelinesAccepted({ ...guidelinesAccepted, privacy: e.target.checked })}
-                className="mt-1 w-5 h-5 text-ue-red rounded focus:ring-ue-red cursor-pointer"
+                className="mt-1 w-5 h-5 text-rose-600 rounded focus:ring-rose-600 cursor-pointer"
               />
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
@@ -501,7 +506,7 @@ function ProfileSetupContent() {
             <button
               onClick={() => setShowGuidelines(false)}
               disabled={!allAccepted}
-              className="w-full bg-gradient-to-r from-pink-500 to-red-500 text-white py-4 rounded-full font-bold text-lg shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="w-full bg-gradient-to-r from-rose-600 to-red-500 text-white py-4 rounded-full font-bold text-lg shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               {allAccepted ? "I Agree ✓" : "I Agree ✓"}
             </button>
@@ -512,9 +517,9 @@ function ProfileSetupContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-rose-50 to-red-50 pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-red-50 to-pink-50 pb-20">
       {/* Header */}
-      <div className="bg-gradient-to-r from-pink-500 to-red-500 shadow-lg p-4">
+      <div className="bg-gradient-to-r from-rose-600 to-red-500 shadow-lg p-4">
         <div className="flex items-center gap-3 max-w-2xl mx-auto">
           <Heart className="w-6 h-6 text-white fill-white" />
           <div>
@@ -554,7 +559,7 @@ function ProfileSetupContent() {
             <input
               type="text"
               required
-              className="w-full p-4 border-2 border-gray-200 rounded-xl bg-white focus:border-ue-red focus:outline-none transition-colors"
+              className="w-full p-4 border-2 border-gray-200 rounded-xl bg-white focus:border-rose-600 focus:outline-none transition-colors"
               placeholder="What should we call you?"
               value={formData.nickname}
               onChange={e => setFormData({...formData, nickname: e.target.value})}
@@ -563,7 +568,7 @@ function ProfileSetupContent() {
           <div>
             <label className="block text-sm font-bold mb-2 text-gray-700">My Gender</label>
             <select
-              className="w-full p-4 border-2 border-gray-200 rounded-xl bg-white focus:border-ue-red focus:outline-none transition-colors"
+              className="w-full p-4 border-2 border-gray-200 rounded-xl bg-white focus:border-rose-600 focus:outline-none transition-colors"
               value={formData.gender}
               onChange={e => setFormData({...formData, gender: e.target.value as Gender})}
             >
@@ -573,11 +578,21 @@ function ProfileSetupContent() {
           <div>
             <label className="block text-sm font-bold mb-2 text-gray-700">Interested In</label>
             <select 
-              className="w-full p-4 border-2 border-gray-200 rounded-xl bg-white focus:border-ue-red focus:outline-none transition-colors"
+              className="w-full p-4 border-2 border-gray-200 rounded-xl bg-white focus:border-rose-600 focus:outline-none transition-colors"
               value={formData.preferred_gender}
               onChange={e => setFormData({...formData, preferred_gender: e.target.value as PreferredGender})}
             >
               {PREF_GENDERS.map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-bold mb-2 text-gray-700">Looking For</label>
+            <select 
+              className="w-full p-4 border-2 border-gray-200 rounded-xl bg-white focus:border-rose-600 focus:outline-none transition-colors"
+              value={formData.looking_for}
+              onChange={e => setFormData({...formData, looking_for: e.target.value as LookingFor})}
+            >
+              {LOOKING_FOR_OPTIONS.map(option => <option key={option} value={option}>{option}</option>)}
             </select>
           </div>
 
@@ -585,7 +600,7 @@ function ProfileSetupContent() {
             <div>
               <label className="block text-sm font-bold mb-2 text-gray-700">College</label>
               <select
-                className="w-full p-4 border-2 border-gray-200 rounded-xl bg-white focus:border-ue-red focus:outline-none transition-colors"
+                className="w-full p-4 border-2 border-gray-200 rounded-xl bg-white focus:border-rose-600 focus:outline-none transition-colors"
                 value={formData.college || 'CAS'}
                 onChange={e => setFormData({...formData, college: e.target.value as College})}
               >
@@ -595,7 +610,7 @@ function ProfileSetupContent() {
             <div>
               <label className="block text-sm font-bold mb-2 text-gray-700">Year Level</label>
               <select 
-                className="w-full p-4 border-2 border-gray-200 rounded-xl bg-white focus:border-ue-red focus:outline-none transition-colors"
+                className="w-full p-4 border-2 border-gray-200 rounded-xl bg-white focus:border-rose-600 focus:outline-none transition-colors"
                 value={formData.year_level}
                 onChange={e => setFormData({...formData, year_level: parseInt(e.target.value)})}
               >
@@ -613,7 +628,7 @@ function ProfileSetupContent() {
              {/* Photo 1 */}
              <div 
                 onClick={() => fileInputRef1.current?.click()}
-                className="aspect-[2/3] bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center border-2 border-dashed border-gray-300 cursor-pointer overflow-hidden relative hover:border-ue-red transition-colors group"
+                className="aspect-[2/3] bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center border-2 border-dashed border-gray-300 cursor-pointer overflow-hidden relative hover:border-rose-600 transition-colors group"
              >
                 {previews[0] ? (
                     <img src={previews[0]} className="w-full h-full object-cover" alt="Preview 1" />
@@ -635,7 +650,7 @@ function ProfileSetupContent() {
              {/* Photo 2 */}
              <div 
                 onClick={() => fileInputRef2.current?.click()}
-                className="aspect-[2/3] bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center border-2 border-dashed border-gray-300 cursor-pointer overflow-hidden relative hover:border-ue-red transition-colors group"
+                className="aspect-[2/3] bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center border-2 border-dashed border-gray-300 cursor-pointer overflow-hidden relative hover:border-rose-600 transition-colors group"
              >
                  {previews[1] ? (
                     <img src={previews[1]} className="w-full h-full object-cover" alt="Preview 2" />
@@ -664,7 +679,7 @@ function ProfileSetupContent() {
             <input
               type="text"
               placeholder="Gaming, Coding, Basketball"
-              className="w-full p-4 border-2 border-gray-200 rounded-xl bg-white focus:border-ue-red focus:outline-none transition-colors"
+              className="w-full p-4 border-2 border-gray-200 rounded-xl bg-white focus:border-rose-600 focus:outline-none transition-colors"
               value={formData.hobbies}
               onChange={e => setFormData({...formData, hobbies: e.target.value})}
             />
@@ -675,7 +690,7 @@ function ProfileSetupContent() {
             <label className="block text-sm font-bold mb-2 text-gray-700">About Me</label>
             <textarea
               placeholder="Tell others about yourself..."
-              className="w-full p-4 border-2 border-gray-200 rounded-xl bg-white focus:border-ue-red focus:outline-none transition-colors h-32 resize-none"
+              className="w-full p-4 border-2 border-gray-200 rounded-xl bg-white focus:border-rose-600 focus:outline-none transition-colors h-32 resize-none"
               value={formData.description}
               onChange={e => setFormData({...formData, description: e.target.value})}
             />
@@ -724,7 +739,7 @@ function ProfileSetupContent() {
         <button
           type="submit"
           disabled={loading || !confirmedAge || !acceptedTerms}
-          className="w-full bg-ue-red text-white font-bold py-5 rounded-full shadow-xl hover:shadow-2xl hover:bg-red-700 transition-all active:scale-95 disabled:opacity-50 text-lg"
+          className="w-full bg-gradient-to-r from-rose-600 to-red-500 text-white font-bold py-5 rounded-full shadow-xl hover:shadow-2xl transition-all active:scale-95 disabled:opacity-50 text-lg"
         >
           {loading ? '⏳ Creating Profile...' : '✨ Create My Profile'}
         </button>
@@ -748,7 +763,7 @@ export default function ProfileSetup() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white">
-        <div className="animate-spin rounded-full h-16 w-16 border-4 border-ue-red border-t-transparent"></div>
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-rose-600 border-t-transparent"></div>
       </div>
     }>
       <ProfileSetupContent />

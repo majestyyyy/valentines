@@ -177,8 +177,11 @@ export default function LikesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-rose-100 to-red-100 flex items-center justify-center">
-        <div className="text-pink-600 text-xl">Loading...</div>
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-red-50 to-pink-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-rose-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-500 font-medium">Loading notifications...</p>
+        </div>
       </div>
     );
   }
@@ -187,18 +190,25 @@ export default function LikesPage() {
   const matchNotifications = notifications.filter(n => n.type === 'match');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-rose-100 to-red-100">
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-red-50 to-pink-50">
       {/* Header */}
-      <div className="bg-gradient-to-r from-pink-500 to-red-500 text-white p-4 sticky top-0 z-10 shadow-lg">
-        <div className="flex items-center justify-between max-w-4xl mx-auto">
+      <div className="bg-gradient-to-r from-rose-600 to-red-500 text-white p-6 sticky top-0 z-10 shadow-lg">
+        <div className="flex items-center gap-4 max-w-4xl mx-auto">
           <button
             onClick={() => router.back()}
-            className="p-2 hover:bg-white/20 rounded-full transition"
+            className="p-2 hover:bg-white/20 rounded-full transition-colors"
           >
             <ArrowLeft size={24} />
           </button>
-          <h1 className="text-2xl font-bold">Notifications</h1>
-          <div className="w-10" /> {/* Spacer */}
+          <div className="flex-1">
+            <h1 className="text-2xl font-black drop-shadow-md">Notifications</h1>
+            <p className="text-sm text-white/90">
+              {notifications.length > 0 
+                ? `${notifications.length} ${notifications.length === 1 ? 'notification' : 'notifications'}`
+                : 'No new notifications'
+              }
+            </p>
+          </div>
         </div>
       </div>
 
@@ -206,18 +216,20 @@ export default function LikesPage() {
         {/* Matches Section */}
         {matchNotifications.length > 0 && (
           <div className="mb-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
-              <Heart className="text-pink-500" fill="currentColor" size={24} />
-              New Matches
+            <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <div className="p-2 bg-rose-100 rounded-xl">
+                <Heart className="text-rose-600" fill="currentColor" size={20} />
+              </div>
+              Connections
             </h2>
             <div className="space-y-3">
               {matchNotifications.map((notif) => (
                 <Link
                   key={notif.id}
                   href="/chat"
-                  className="bg-white rounded-2xl p-4 shadow-md hover:shadow-xl transition flex items-center gap-4 border-2 border-pink-300"
+                  className="bg-white rounded-3xl p-5 shadow-md hover:shadow-xl transition-all flex items-center gap-4 border border-gray-100 active:scale-[0.98]"
                 >
-                  <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-pink-200 to-red-200 flex-shrink-0">
+                  <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-rose-200 to-red-200 flex-shrink-0 ring-2 ring-rose-200">
                     {notif.from_profile.photo_urls?.[0] ? (
                       <img
                         src={notif.from_profile.photo_urls[0]}
@@ -225,7 +237,7 @@ export default function LikesPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-pink-500 text-2xl">
+                      <div className="w-full h-full flex items-center justify-center text-rose-600 text-2xl font-bold">
                         {(notif.from_profile.nickname || 'U')[0].toUpperCase()}
                       </div>
                     )}
@@ -234,10 +246,16 @@ export default function LikesPage() {
                     <h3 className="font-bold text-lg text-gray-800">
                       {notif.from_profile.nickname || 'Anonymous'}
                     </h3>
-                    <p className="text-pink-600 font-semibold">It's a Match! 💕</p>
-                    <p className="text-sm text-gray-500">{getTimeAgo(notif.created_at)}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="bg-gradient-to-r from-rose-600 to-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">Connected</span>
+                      <span className="text-xs text-gray-400">{getTimeAgo(notif.created_at)}</span>
+                    </div>
                   </div>
-                  <Heart className="text-pink-500 flex-shrink-0" fill="currentColor" size={32} />
+                  <div className="flex-shrink-0">
+                    <div className="bg-rose-100 rounded-full p-3">
+                      <Heart className="text-rose-600" fill="currentColor" size={24} />
+                    </div>
+                  </div>
                 </Link>
               ))}
             </div>
@@ -247,55 +265,51 @@ export default function LikesPage() {
         {/* Likes Section */}
         {likeNotifications.length > 0 && (
           <div>
-           
-            <div className="space-y-3">
+            <h2 className="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
+              <span className="text-3xl">✨</span>
+              Secret Admirers
+            </h2>
+            <div className="space-y-4">
               {likeNotifications.map((notif) => (
                 <div
                   key={notif.id}
-                  className="bg-white rounded-2xl p-4 shadow-md hover:shadow-xl transition relative overflow-hidden"
+                  className="bg-white rounded-3xl shadow-lg hover:shadow-xl transition-all overflow-hidden border border-gray-100"
                 >
-                  {/* Mysterious gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-pink-50/80 to-purple-50/80 pointer-events-none" />
-                  
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-4 mb-3">
+                  {/* Card Content */}
+                  <div className="p-6">
+                    <div className="flex items-center gap-4 mb-4">
                       {/* Blurred/Hidden Photo */}
-                      <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-pink-300 to-purple-400 flex-shrink-0 relative">
+                      <div className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-rose-300 to-red-400 flex-shrink-0 relative ring-4 ring-rose-100">
                         {notif.from_profile.photo_urls?.[0] ? (
                           <div className="relative w-full h-full">
                             <img
                               src={notif.from_profile.photo_urls[0]}
                               alt="Secret Admirer"
-                              className="w-full h-full object-cover blur-xl scale-110"
+                              className="w-full h-full object-cover blur-2xl scale-110"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-br from-pink-400/60 to-purple-500/60" />
+                            <div className="absolute inset-0 bg-gradient-to-br from-rose-400/70 to-red-500/70" />
                           </div>
                         ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-pink-400 to-purple-500" />
+                          <div className="w-full h-full bg-gradient-to-br from-rose-400 to-red-500" />
                         )}
                         {/* Mystery icon */}
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-white text-3xl">❓</span>
+                          <span className="text-white text-4xl drop-shadow-lg">❓</span>
                         </div>
                       </div>
                       
                       <div className="flex-1">
-                        <h3 className="font-bold text-lg text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600">
-                          Secret Admirer 💕
+                        <h3 className="font-black text-xl text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-red-500 mb-2">
+                          Someone likes you from {notif.from_profile.college || 'UE'}
                         </h3>
-                        <p className="text-gray-600 text-sm">
-                          {notif.from_profile.college ? `From ${notif.from_profile.college}` : 'From your campus'}
-                        </p>
-                        <p className="text-sm text-gray-500">{getTimeAgo(notif.created_at)}</p>
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <span>{getTimeAgo(notif.created_at)}</span>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Teaser message instead of description */}
-                    <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg p-4 mb-3 border-2 border-pink-300">
-                      <p className="text-gray-800 text-sm text-center font-semibold mb-1">
-                        Someone from {notif.from_profile.college || 'your campus'} is interested in you! 💫
-                      </p>
-                    </div>
+                    {/* Hint Box */}
+                   
                   </div>
                 </div>
               ))}
@@ -305,21 +319,25 @@ export default function LikesPage() {
 
         {/* Empty State */}
         {notifications.length === 0 && (
-          <div className="text-center py-20">
-            <div className="relative inline-block mb-4">
-              <Heart size={64} className="text-gray-300" />
-              <span className="absolute -top-2 -right-2 text-3xl">❓</span>
+          <div className="text-center py-20 px-4">
+            <div className="bg-white rounded-3xl p-12 shadow-lg border border-gray-100 max-w-md mx-auto">
+              <div className="relative inline-block mb-6">
+                <div className="w-24 h-24 bg-gradient-to-br from-rose-100 to-red-100 rounded-full flex items-center justify-center">
+                  <Heart size={48} className="text-rose-400" />
+                </div>
+                <span className="absolute -top-2 -right-2 text-4xl">❓</span>
+              </div>
+              <h3 className="text-2xl font-black text-gray-800 mb-3">No notifications yet</h3>
+              <p className="text-gray-500 mb-6">
+                Start swiping to connect with others and see who's interested in you!
+              </p>
+              <Link
+                href="/home"
+                className="inline-block bg-gradient-to-r from-rose-600 to-red-500 text-white font-bold py-4 px-8 rounded-full hover:from-rose-700 hover:to-red-600 transition-all shadow-lg hover:shadow-xl active:scale-95"
+              >
+                Start Exploring
+              </Link>
             </div>
-            <h3 className="text-xl font-bold text-gray-600 mb-2">No secret admirers yet</h3>
-            <p className="text-gray-500">
-              When someone likes you, they'll appear here as a mystery!
-            </p>
-            <Link
-              href="/home"
-              className="inline-block mt-6 bg-gradient-to-r from-pink-500 to-red-500 text-white font-bold py-3 px-8 rounded-full hover:from-pink-600 hover:to-red-600 transition"
-            >
-              Start Swiping
-            </Link>
           </div>
         )}
       </div>

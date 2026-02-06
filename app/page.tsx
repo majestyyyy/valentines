@@ -275,27 +275,27 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center p-6 bg-gradient-to-br from-pink-100 via-rose-50 to-red-50">
+    <main className="relative flex min-h-screen flex-col items-center justify-center p-6 bg-gradient-to-br from-rose-50 via-red-50 to-pink-50">
       <div className="w-full max-w-md relative z-10">
         {/* Logo Section */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-pink-500 to-red-500 rounded-full mb-6 shadow-2xl animate-pulse">
+          <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-rose-600 to-red-500 rounded-full mb-6 shadow-2xl animate-pulse">
             <Heart className="w-14 h-14 text-white fill-white" />
           </div>
-          <h1 className="text-6xl font-black bg-gradient-to-r from-pink-500 to-red-500 bg-clip-text text-transparent mb-4 drop-shadow-lg">yUE Match!</h1>
-          <p className="text-gray-700 text-lg font-medium">Find your match within the campus 💕</p>
+          <h1 className="text-6xl font-black bg-gradient-to-r from-rose-600 to-red-500 bg-clip-text text-transparent mb-4 drop-shadow-lg">yUE Match</h1>
+          <p className="text-gray-700 text-lg font-medium">Connect with students across campus 🎓</p>
         </div>
 
         {/* Login/Signup/Verify Card */}
-        <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-8 border-2 border-pink-200/50">
+        <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-8 border-2 border-rose-200/50">
           {mode === 'verify' ? (
             // OTP Verification Form
             <form onSubmit={handleVerifyOtp} className="space-y-6">
               <div className="text-center mb-6">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-pink-100 rounded-full mb-3">
-                  <Mail className="w-8 h-8 text-pink-600" />
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-rose-100 rounded-full mb-3">
+                  <Mail className="w-8 h-8 text-rose-600" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">Check Your Email 💌</h2>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">Check Your Email 📧</h2>
                 <p className="text-sm text-gray-500">We sent an 8-digit code to <strong>{email}</strong></p>
               </div>
 
@@ -306,7 +306,7 @@ export default function LoginPage() {
                 <input
                   type="text"
                   id="otp"
-                  className="w-full rounded-xl border-2 border-gray-200 px-4 py-4 focus:border-ue-red focus:outline-none transition-colors text-center text-2xl font-bold tracking-widest"
+                  className="w-full rounded-xl border-2 border-gray-200 px-4 py-4 focus:border-rose-600 focus:outline-none transition-colors text-center text-2xl font-bold tracking-widest"
                   placeholder="00000000"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 8))}
@@ -328,7 +328,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading || otp.length !== 8}
-                className="w-full rounded-full bg-gradient-to-r from-pink-500 to-red-500 px-6 py-4 text-base font-bold text-white shadow-lg hover:shadow-xl focus:outline-none disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
+                className="w-full rounded-full bg-gradient-to-r from-rose-600 to-red-500 px-6 py-4 text-base font-bold text-white shadow-lg hover:shadow-xl focus:outline-none disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
               >
                 <Key className="w-5 h-5" />
                 {loading ? 'Verifying...' : 'Verify & Continue'}
@@ -341,7 +341,7 @@ export default function LoginPage() {
                   setOtp('');
                   setMessage('');
                 }}
-                className="w-full text-sm text-gray-500 hover:text-pink-500 transition-colors"
+                className="w-full text-sm text-gray-500 hover:text-rose-600 transition-colors"
               >
                 ← Back to login
               </button>
@@ -350,8 +350,8 @@ export default function LoginPage() {
             // Forgot Password Form
             <form onSubmit={handleForgotPassword} className="space-y-6">
               <div className="text-center mb-6">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-pink-100 rounded-full mb-3">
-                  <Key className="w-8 h-8 text-pink-600" />
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-rose-100 rounded-full mb-3">
+                  <Key className="w-8 h-8 text-rose-600" />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">Forgot Password? 🔑</h2>
                 <p className="text-sm text-gray-500">No worries! We'll send you reset instructions.</p>
@@ -364,7 +364,7 @@ export default function LoginPage() {
                 <input
                   type="email"
                   id="forgot-email"
-                  className="w-full rounded-xl border-2 border-pink-200 px-4 py-4 focus:border-pink-500 focus:outline-none transition-colors text-base"
+                  className="w-full rounded-xl border-2 border-rose-200 px-4 py-4 focus:border-rose-600 focus:outline-none transition-colors text-base"
                   placeholder="student@ue.edu.ph"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -385,7 +385,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-full bg-gradient-to-r from-pink-500 to-red-500 px-6 py-4 text-base font-bold text-white shadow-lg hover:shadow-xl focus:outline-none disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
+                className="w-full rounded-full bg-gradient-to-r from-rose-600 to-red-500 px-6 py-4 text-base font-bold text-white shadow-lg hover:shadow-xl focus:outline-none disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
               >
                 <Mail className="w-5 h-5" />
                 {loading ? 'Sending...' : 'Send Reset Link'}
@@ -397,7 +397,7 @@ export default function LoginPage() {
                   setMode('login');
                   setMessage('');
                 }}
-                className="w-full text-sm text-gray-500 hover:text-pink-500 transition-colors"
+                className="w-full text-sm text-gray-500 hover:text-rose-600 transition-colors"
               >
                 ← Back to login
               </button>
@@ -417,7 +417,7 @@ export default function LoginPage() {
                 <input
                   type="email"
                   id="signup-email"
-                  className="w-full rounded-xl border-2 border-pink-200 px-4 py-4 focus:border-pink-500 focus:outline-none transition-colors text-base"
+                  className="w-full rounded-xl border-2 border-rose-200 px-4 py-4 focus:border-rose-600 focus:outline-none transition-colors text-base"
                   placeholder="student@ue.edu.ph"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -432,7 +432,7 @@ export default function LoginPage() {
                 <input
                   type="password"
                   id="signup-password"
-                  className="w-full rounded-xl border-2 border-pink-200 px-4 py-4 focus:border-pink-500 focus:outline-none transition-colors text-base"
+                  className="w-full rounded-xl border-2 border-rose-200 px-4 py-4 focus:border-rose-600 focus:outline-none transition-colors text-base"
                   placeholder="At least 6 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -448,7 +448,7 @@ export default function LoginPage() {
                 <input
                   type="password"
                   id="confirm-password"
-                  className="w-full rounded-xl border-2 border-pink-200 px-4 py-4 focus:border-pink-500 focus:outline-none transition-colors text-base"
+                  className="w-full rounded-xl border-2 border-rose-200 px-4 py-4 focus:border-rose-600 focus:outline-none transition-colors text-base"
                   placeholder="Re-enter your password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -470,7 +470,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-full bg-gradient-to-r from-pink-500 to-red-500 px-6 py-4 text-base font-bold text-white shadow-lg hover:shadow-xl focus:outline-none disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
+                className="w-full rounded-full bg-gradient-to-r from-rose-600 to-red-500 px-6 py-4 text-base font-bold text-white shadow-lg hover:shadow-xl focus:outline-none disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
               >
                 <Mail className="w-5 h-5" />
                 {loading ? 'Creating Account...' : 'Sign Up'}
@@ -484,7 +484,7 @@ export default function LoginPage() {
                   setConfirmPassword('');
                   setMessage('');
                 }}
-                className="w-full text-sm text-gray-500 hover:text-pink-500 transition-colors"
+                className="w-full text-sm text-gray-500 hover:text-rose-600 transition-colors"
               >
                 Already have an account? <span className="font-bold">Log in</span>
               </button>
@@ -504,7 +504,7 @@ export default function LoginPage() {
                 <input
                   type="email"
                   id="email"
-                  className="w-full rounded-xl border-2 border-pink-200 px-4 py-4 focus:border-pink-500 focus:outline-none transition-colors text-base"
+                  className="w-full rounded-xl border-2 border-rose-200 px-4 py-4 focus:border-rose-600 focus:outline-none transition-colors text-base"
                   placeholder="student@ue.edu.ph"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -519,7 +519,7 @@ export default function LoginPage() {
                 <input
                   type="password"
                   id="password"
-                  className="w-full rounded-xl border-2 border-pink-200 px-4 py-4 focus:border-pink-500 focus:outline-none transition-colors text-base"
+                  className="w-full rounded-xl border-2 border-rose-200 px-4 py-4 focus:border-rose-600 focus:outline-none transition-colors text-base"
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -536,7 +536,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-full bg-gradient-to-r from-pink-500 to-red-500 px-6 py-4 text-base font-bold text-white shadow-lg hover:shadow-xl focus:outline-none disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
+                className="w-full rounded-full bg-gradient-to-r from-rose-600 to-red-500 px-6 py-4 text-base font-bold text-white shadow-lg hover:shadow-xl focus:outline-none disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
               >
                 <Lock className="w-5 h-5" />
                 {loading ? 'Logging in...' : 'Log In'}
@@ -550,7 +550,7 @@ export default function LoginPage() {
                     setPassword('');
                     setMessage('');
                   }}
-                  className="text-pink-600 hover:text-pink-700 font-semibold transition-colors"
+                  className="text-rose-600 hover:text-rose-700 font-semibold transition-colors"
                 >
                   Forgot password?
                 </button>
@@ -563,7 +563,7 @@ export default function LoginPage() {
                   setPassword('');
                   setMessage('');
                 }}
-                className="w-full text-sm text-gray-500 hover:text-pink-500 transition-colors"
+                className="w-full text-sm text-gray-500 hover:text-rose-600 transition-colors"
               >
                 Don't have an account? <span className="font-bold">Sign up</span>
               </button>
@@ -576,7 +576,7 @@ export default function LoginPage() {
           By continuing, you agree to our{' '}
           <a
             href="/terms"
-            className="text-red-600 hover:text-red-700 underline font-semibold"
+            className="text-rose-600 hover:text-rose-700 underline font-semibold"
           >
             Terms of Service & Privacy Policy
           </a>

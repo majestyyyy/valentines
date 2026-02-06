@@ -470,9 +470,9 @@ export default function ChatRoom() {
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-gradient-to-br from-pink-100 via-rose-50 to-red-50 overflow-hidden">
+    <div className="fixed inset-0 flex flex-col bg-gradient-to-br from-rose-50 via-red-50 to-pink-50 overflow-hidden">
       {/* Header */}
-      <header className="bg-gradient-to-r from-pink-500 to-red-500 p-4 shadow-lg flex items-center gap-3 flex-shrink-0 z-20">
+      <header className="bg-gradient-to-r from-rose-600 to-red-500 p-4 shadow-lg flex items-center gap-3 flex-shrink-0 z-20">
         <Link href="/chat" className="p-2 hover:bg-white/20 rounded-full transition-colors">
           <ChevronLeft className="text-white" />
         </Link>
@@ -518,11 +518,11 @@ export default function ChatRoom() {
 
       {/* Match Mission Banner */}
       {task && (
-         <div className={`p-5 border-b-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-all duration-300 animate-in slide-in-from-top flex-shrink-0 z-10 shadow-lg ${task.is_completed ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200' : 'bg-gradient-to-r from-pink-100 via-red-50 to-orange-100 border-red-200'}`}>
+         <div className={`p-5 border-b-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-all duration-300 animate-in slide-in-from-top flex-shrink-0 z-10 shadow-lg ${task.is_completed ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200' : 'bg-gradient-to-r from-rose-50 via-red-50 to-pink-50 border-rose-200'}`}>
              <div className="flex-1">
                  <div className="flex items-center gap-2 mb-2">
                    <span className="text-2xl animate-pulse">💕</span>
-                   <p className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-red-600 uppercase tracking-wide">
+                   <p className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-red-600 uppercase tracking-wide">
                      Match Mission {task.mission_number || 1}/3
                    </p>
                  </div>
@@ -542,7 +542,7 @@ export default function ChatRoom() {
              <button 
                 onClick={completeTask}
                 disabled={task.is_completed === true}
-                className={`px-6 py-3 rounded-full font-bold text-sm transition-all duration-200 hover:scale-105 active:scale-95 shadow-md whitespace-nowrap ${task.is_completed ? 'bg-green-500 text-white shadow-green-200 cursor-default' : 'bg-gradient-to-r from-pink-500 to-red-500 text-white hover:shadow-xl hover:shadow-red-200'}`}
+                className={`px-6 py-3 rounded-full font-bold text-sm transition-all duration-200 hover:scale-105 active:scale-95 shadow-md whitespace-nowrap ${task.is_completed ? 'bg-green-500 text-white shadow-green-200 cursor-default' : 'bg-gradient-to-r from-rose-600 to-red-500 text-white hover:shadow-xl hover:shadow-rose-200'}`}
              >
                 {task.is_completed ? (
                   <span className="flex items-center gap-2">
@@ -578,7 +578,7 @@ export default function ChatRoom() {
               >
                 <div className={`max-w-[75%] px-4 py-3 rounded-2xl shadow-sm transition-all hover:shadow-md ${
                   isMe 
-                    ? 'bg-gradient-to-r from-ue-red to-red-600 text-white rounded-br-md' 
+                    ? 'bg-gradient-to-r from-rose-600 to-red-500 text-white rounded-br-md' 
                     : 'bg-white border-2 border-gray-100 text-gray-800 rounded-bl-md'
                 }`}>
                   <p className="text-sm leading-relaxed">{msg.content}</p>
@@ -596,12 +596,12 @@ export default function ChatRoom() {
           value={newMessage}
           onChange={e => setNewMessage(e.target.value)}
           placeholder="Type a message..."
-          className="flex-1 bg-gray-50 border-2 border-gray-200 rounded-full px-5 py-3 focus:outline-none focus:border-ue-red focus:bg-white focus:shadow-md focus:scale-[1.02] transition-all duration-200"
+          className="flex-1 bg-gray-50 border-2 border-gray-200 rounded-full px-5 py-3 focus:outline-none focus:border-rose-600 focus:bg-white focus:shadow-md focus:scale-[1.02] transition-all duration-200"
         />
         <button 
           type="submit"
           disabled={!newMessage.trim()}
-          className="bg-ue-red text-white p-3 rounded-full hover:bg-red-700 transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed w-12 h-12 flex items-center justify-center group"
+          className="bg-rose-600 text-white p-3 rounded-full hover:bg-rose-700 transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed w-12 h-12 flex items-center justify-center group"
         >
           <Send size={20} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </button>
@@ -655,7 +655,7 @@ export default function ChatRoom() {
 
             <button
               onClick={handleReminderClose}
-              className="w-full bg-gradient-to-r from-ue-red to-red-600 text-white font-bold py-4 rounded-full hover:shadow-xl transition-all active:scale-95"
+              className="w-full bg-gradient-to-r from-rose-600 to-red-500 text-white font-bold py-4 rounded-full hover:shadow-xl transition-all active:scale-95"
             >
               I Understand, Start Chatting
             </button>
@@ -691,7 +691,7 @@ export default function ChatRoom() {
                 <select
                   value={reportReason}
                   onChange={(e) => setReportReason(e.target.value)}
-                  className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-red-600 focus:outline-none transition-colors"
+                  className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-rose-600 focus:outline-none transition-colors"
                 >
                   <option value="">Select a reason...</option>
                   <option value="Harassment or bullying">Harassment or bullying</option>
@@ -710,7 +710,7 @@ export default function ChatRoom() {
                   value={reportDetails}
                   onChange={(e) => setReportDetails(e.target.value)}
                   placeholder="Provide any additional context..."
-                  className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-red-600 focus:outline-none transition-colors h-24 resize-none"
+                  className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-rose-600 focus:outline-none transition-colors h-24 resize-none"
                 />
               </div>
 
@@ -798,7 +798,7 @@ export default function ChatRoom() {
                   )}
                 </>
               ) : (
-                <div className="w-full h-[500px] bg-gradient-to-br from-ue-red to-pink-500 flex items-center justify-center">
+                <div className="w-full h-[500px] bg-gradient-to-br from-rose-600 to-red-500 flex items-center justify-center">
                   <Heart className="w-32 h-32 text-white/20 fill-white/20" />
                 </div>
               )}
@@ -817,7 +817,7 @@ export default function ChatRoom() {
 
               <button
                 onClick={() => setShowProfileModal(false)}
-                className="w-full bg-gradient-to-r from-ue-red to-pink-600 text-white font-bold py-4 rounded-full hover:shadow-lg transition-all active:scale-95"
+                className="w-full bg-gradient-to-r from-rose-600 to-red-500 text-white font-bold py-4 rounded-full hover:shadow-lg transition-all active:scale-95"
               >
                 Close Profile
               </button>

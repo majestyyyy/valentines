@@ -13,10 +13,12 @@ import Modal from '@/components/Modal';
 type College = Database['public']['Tables']['profiles']['Row']['college'];
 type Gender = 'Male' | 'Female' | 'Non-binary' | 'Other';
 type PreferredGender = 'Male' | 'Female' | 'Non-binary' | 'Other' | 'Everyone';
+type LookingFor = 'Romantic' | 'Friendship' | 'Study Buddy' | 'Networking' | 'Everyone';
 
 const COLLEGES: Array<'CAS' | 'CCSS' | 'CBA' | 'CEDUC' | 'CDENT' | 'CENG'> = ['CAS', 'CCSS', 'CBA', 'CEDUC', 'CDENT', 'CENG'];
 const GENDERS: Gender[] = ['Male', 'Female', 'Non-binary', 'Other'];
 const PREF_GENDERS: PreferredGender[] = ['Male', 'Female', 'Non-binary', 'Other', 'Everyone'];
+const LOOKING_FOR_OPTIONS: LookingFor[] = ['Romantic', 'Friendship', 'Study Buddy', 'Networking', 'Everyone'];
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -32,6 +34,7 @@ export default function ProfilePage() {
     description: '',
     gender: 'Male' as Gender,
     preferred_gender: 'Everyone' as PreferredGender,
+    looking_for: 'Romantic' as LookingFor,
   });
 
   // Photo state
@@ -106,6 +109,7 @@ export default function ProfilePage() {
         description: profile.description || '',
         gender: profile.gender as Gender || 'Male',
         preferred_gender: profile.preferred_gender as PreferredGender || 'Everyone',
+        looking_for: profile.looking_for as LookingFor || 'Romantic',
       });
 
       if (profile.photo_urls) {
@@ -289,6 +293,7 @@ export default function ProfilePage() {
         description: sanitizedDescription,
         gender: formData.gender,
         preferred_gender: formData.preferred_gender,
+        looking_for: formData.looking_for,
         photo_urls: cleanedPhotoUrls,
         status: 'pending', // Require admin review
       };
@@ -377,7 +382,7 @@ export default function ProfilePage() {
     return (
       <div className="h-[100dvh] flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-ue-red border-t-transparent mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-rose-600 border-t-transparent mx-auto mb-4"></div>
           <p className="text-gray-500 font-medium">Loading profile...</p>
         </div>
       </div>
@@ -385,9 +390,9 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-gradient-to-br from-pink-100 via-rose-50 to-red-50">
+    <div className="min-h-[100dvh] bg-gradient-to-br from-rose-50 via-red-50 to-pink-50">
       {/* Header */}
-      <header className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-gradient-to-r from-pink-500 to-red-500 shadow-lg">
+      <header className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-gradient-to-r from-rose-600 to-red-500 shadow-lg">
         <button 
           onClick={() => router.push('/home')}
           className="p-2 hover:bg-white/20 rounded-full transition-colors"
@@ -449,6 +454,11 @@ export default function ProfilePage() {
               </div>
 
               <div>
+                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-1">Interested In</h3>
+                <p className="text-lg font-medium text-gray-800">{formData.looking_for}</p>
+              </div>
+
+              <div>
                 <h3 className="text-sm font-semibold text-gray-500 uppercase mb-1">About Me</h3>
                 <p className="text-gray-700 whitespace-pre-wrap break-words">{formData.description}</p>
               </div>
@@ -459,7 +469,7 @@ export default function ProfilePage() {
                   {formData.hobbies.split(',').map((hobby, idx) => (
                     <span 
                       key={idx} 
-                      className="bg-gradient-to-r from-pink-100 to-red-100 text-gray-700 px-4 py-2 rounded-full text-sm font-medium border border-pink-200 break-words"
+                      className="bg-gradient-to-r from-rose-50 to-red-50 text-gray-700 px-4 py-2 rounded-full text-sm font-medium border border-rose-200 break-words"
                     >
                       {hobby.trim()}
                     </span>
@@ -471,7 +481,7 @@ export default function ProfilePage() {
             {/* Edit Button */}
             <button
               onClick={() => setIsEditing(true)}
-              className="w-full bg-gradient-to-r from-pink-500 to-red-500 text-white py-4 rounded-full font-bold text-lg shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-rose-600 to-red-500 text-white py-4 rounded-full font-bold text-lg shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
             >
               <Edit2 className="w-5 h-5" />
               Edit Profile
@@ -548,7 +558,7 @@ export default function ProfilePage() {
                   type="text"
                   value={formData.nickname}
                   onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-ue-red focus:outline-none transition-colors text-gray-800"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-rose-600 focus:outline-none transition-colors text-gray-800"
                   placeholder="What should we call you?"
                 />
               </div>
@@ -559,7 +569,7 @@ export default function ProfilePage() {
                   <select
                     value={formData.college || ''}
                     onChange={(e) => setFormData({ ...formData, college: e.target.value as College })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-ue-red focus:outline-none transition-colors text-gray-800"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-rose-600 focus:outline-none transition-colors text-gray-800"
                   >
                     {COLLEGES.map(college => (
                       <option key={college} value={college}>{college}</option>
@@ -572,7 +582,7 @@ export default function ProfilePage() {
                   <select
                     value={formData.year_level}
                     onChange={(e) => setFormData({ ...formData, year_level: parseInt(e.target.value) })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-ue-red focus:outline-none transition-colors text-gray-800"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-rose-600 focus:outline-none transition-colors text-gray-800"
                   >
                     {[1, 2, 3, 4, 5].map(year => (
                       <option key={year} value={year}>{year}</option>
@@ -587,7 +597,7 @@ export default function ProfilePage() {
                   <select
                     value={formData.gender}
                     onChange={(e) => setFormData({ ...formData, gender: e.target.value as Gender })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-ue-red focus:outline-none transition-colors text-gray-800"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-rose-600 focus:outline-none transition-colors text-gray-800"
                   >
                     {GENDERS.map(gender => (
                       <option key={gender} value={gender}>{gender}</option>
@@ -600,7 +610,7 @@ export default function ProfilePage() {
                   <select
                     value={formData.preferred_gender}
                     onChange={(e) => setFormData({ ...formData, preferred_gender: e.target.value as PreferredGender })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-ue-red focus:outline-none transition-colors text-gray-800"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-rose-600 focus:outline-none transition-colors text-gray-800"
                   >
                     {PREF_GENDERS.map(gender => (
                       <option key={gender} value={gender}>{gender}</option>
@@ -610,12 +620,25 @@ export default function ProfilePage() {
               </div>
 
               <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Interested In *</label>
+                <select
+                  value={formData.looking_for}
+                  onChange={(e) => setFormData({ ...formData, looking_for: e.target.value as LookingFor })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-rose-600 focus:outline-none transition-colors text-gray-800"
+                >
+                  {LOOKING_FOR_OPTIONS.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">About Me *</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={4}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-ue-red focus:outline-none transition-colors resize-none text-gray-800"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-rose-600 focus:outline-none transition-colors resize-none text-gray-800"
                   placeholder="Tell us about yourself..."
                 />
               </div>
@@ -626,7 +649,7 @@ export default function ProfilePage() {
                   type="text"
                   value={formData.hobbies}
                   onChange={(e) => setFormData({ ...formData, hobbies: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-ue-red focus:outline-none transition-colors text-gray-800"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-rose-600 focus:outline-none transition-colors text-gray-800"
                   placeholder="e.g., Reading, Gaming, Music"
                 />
               </div>
@@ -648,7 +671,7 @@ export default function ProfilePage() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-1 bg-gradient-to-r from-pink-500 to-red-500 text-white py-4 rounded-full font-bold text-lg shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2"
+                className="flex-1 bg-gradient-to-r from-rose-600 to-red-500 text-white py-4 rounded-full font-bold text-lg shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2"
               >
                 {saving ? (
                   <>
@@ -695,7 +718,7 @@ export default function ProfilePage() {
               </button>
               <button
                 onClick={confirmSave}
-                className="flex-1 bg-ue-red text-white py-3 rounded-full font-bold hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                className="flex-1 bg-rose-600 text-white py-3 rounded-full font-bold hover:bg-rose-700 transition-colors flex items-center justify-center gap-2"
               >
                 <Save className="w-5 h-5" />
                 Confirm Save

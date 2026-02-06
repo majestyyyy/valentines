@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/supabase';
-import { Heart, X, MessageCircle, Bell, User, AlertTriangle } from 'lucide-react';
+import { Heart, X, MessageCircle, Bell, User, AlertTriangle, Users, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Modal from '@/components/Modal';
@@ -319,19 +319,23 @@ export default function HomePage() {
       .eq('status', 'approved')
       .filter('id', 'not.in', safeIds);
     
-    // Only apply gender filters if user has a specific preference (not "Everyone")
+    // Apply gender filters based on mutual interest
     if (myProfileData.preferred_gender !== 'Everyone') {
-      // Filter by preferred gender: show only profiles matching my preference
+      // I prefer a specific gender - show only profiles of that gender
       query = query.eq('gender', myProfileData.preferred_gender);
       
-      // Filter by mutual interest: show only profiles that prefer my gender OR prefer Everyone
+      // AND those profiles must also be interested in my gender (or Everyone)
+      if (myProfileData.gender) {
+        query = query.or(`preferred_gender.eq.Everyone,preferred_gender.eq.${myProfileData.gender}`);
+      }
+    } else {
+      // I prefer Everyone - show all profiles that are interested in my gender OR Everyone
       if (myProfileData.gender) {
         query = query.or(`preferred_gender.eq.Everyone,preferred_gender.eq.${myProfileData.gender}`);
       }
     }
-    // If user prefers "Everyone", show all genders without restriction
 
-    query = query.limit(10);
+    query = query.limit(50); // Increased limit to show more candidates
 
     const { data: candidates, error } = await query;
     
@@ -568,13 +572,13 @@ export default function HomePage() {
     
     // Regular Match Popup
     return (
-      <div className="fixed inset-0 z-50 bg-gradient-to-br from-ue-red/20 via-pink-500/20 to-purple-500/20 backdrop-blur-md flex flex-col items-center justify-center p-8 text-white overflow-hidden">
-        {/* Animated Hearts Background */}
+      <div className="fixed inset-0 z-50 bg-gradient-to-br from-rose-600 via-red-500 to-pink-600 flex flex-col items-center justify-center p-8 text-white overflow-hidden">
+        {/* Animated Background Icons */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {[...Array(20)].map((_, i) => (
             <Heart
               key={i}
-              className="absolute text-ue-red fill-ue-red opacity-30 animate-float"
+              className="absolute text-white opacity-20 animate-float"
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
@@ -589,8 +593,8 @@ export default function HomePage() {
 
         {/* Content */}
         <div className="relative z-10 max-w-md w-full">
-          <h1 className="text-5xl font-black text-ue-red mb-8 text-center drop-shadow-lg animate-pulse">
-            IT'S A MATCH!
+          <h1 className="text-5xl font-black text-white mb-8 text-center drop-shadow-lg animate-pulse">
+            YUE MATCH!
           </h1>
           
           <div className="flex gap-6 items-center justify-center mb-8">
@@ -611,8 +615,11 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Heart Icon */}
-            <Heart className="text-ue-red fill-ue-red w-12 h-12 animate-bounce" />
+            {/* Connection Icon */}
+            <div className="flex gap-1">
+              <Heart className="text-ue-red fill-ue-red w-12 h-12 animate-bounce" />
+        
+            </div>
 
             {/* Match Photo */}
             <div className="relative">
@@ -633,21 +640,21 @@ export default function HomePage() {
           </div>
 
           <p className="text-center text-xl mb-10 text-white drop-shadow-md font-medium">
-            You and <span className="font-bold text-ue-red">{matchPopup.nickname}</span> liked each other!
+            You and <span className="font-bold">{matchPopup.nickname}</span> liked each other!
           </p>
           
           <div className="flex flex-col w-full gap-4">
             <Link 
               href="/chat" 
-              className="w-full bg-ue-red hover:bg-red-700 py-4 rounded-full text-center font-bold text-lg shadow-xl transition-all hover:scale-105"
+              className="w-full bg-white text-rose-600 hover:bg-gray-100 py-4 rounded-full text-center font-bold text-lg shadow-xl transition-all hover:scale-105"
             >
               Send a Message
             </Link>
             <button 
               onClick={() => setMatchPopup(null)}
-              className="w-full bg-white/20 backdrop-blur-sm border-2 border-white hover:bg-white/30 py-4 rounded-full font-bold text-lg transition-all hover:scale-105"
+              className="w-full bg-white/20 backdrop-blur-sm border-2 border-white hover:bg-white/30 py-4 rounded-full font-bold text-lg transition-all hover:scale-105 text-white"
             >
-              Keep Swiping
+              Keep Browsing
             </button>
           </div>
         </div>
@@ -659,7 +666,7 @@ export default function HomePage() {
     return (
       <div className="h-[100dvh] flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-ue-red border-t-transparent mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-rose-600 border-t-transparent mx-auto mb-4"></div>
           <p className="text-gray-500 font-medium">Loading profiles...</p>
         </div>
       </div>
@@ -667,12 +674,12 @@ export default function HomePage() {
   }
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-gradient-to-br from-pink-100 via-rose-50 to-red-50 overflow-hidden">
+    <div className="h-[100dvh] flex flex-col bg-gradient-to-br from-rose-50 via-red-50 to-pink-50 overflow-hidden">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-pink-500 to-red-500 shadow-lg z-40">
+      <header className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-rose-600 to-red-500 shadow-lg z-40">
         <div className="flex items-center gap-2">
-          <Heart className="w-7 h-7 text-white fill-white" />
-          <h1 className="text-xl font-black text-white drop-shadow-md">yUE Match!</h1>
+          <Users className="w-7 h-7 text-white" />
+          <h1 className="text-xl font-black text-white drop-shadow-md">yUE Match</h1>
         </div>
         <div className="flex items-center gap-2">
           <Link href="/likes" className="relative p-2 hover:bg-white/20 rounded-full transition-colors group">
@@ -684,9 +691,9 @@ export default function HomePage() {
             )}
           </Link>
           <Link href="/chat" className="relative p-2 hover:bg-white/20 rounded-full transition-colors group">
-            <Heart className="w-6 h-6 text-white fill-white group-hover:scale-110 transition-transform" />
+            <MessageCircle className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
             {matchCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-gradient-to-r from-ue-red to-pink-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg animate-pulse">
+              <span className="absolute -top-1 -right-1 bg-gradient-to-r from-rose-600 to-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg animate-pulse">
                 {matchCount > 9 ? '9+' : matchCount}
               </span>
             )}
@@ -721,22 +728,22 @@ export default function HomePage() {
               {/* Swipe Indicators */}
               {isDragging && (
                 <>
-                  {/* LIKE indicator */}
+                  {/* HEART indicator */}
                   <div 
                     className="absolute top-12 left-8 z-30 pointer-events-none transition-opacity duration-200"
                     style={{ opacity: Math.max(0, Math.min(1, dragOffset.x / 100)) }}
                   >
-                    <div className="bg-green-500 text-white px-6 py-3 rounded-xl font-bold text-2xl shadow-xl border-4 border-white rotate-12">
-                      LIKE
+                    <div className="bg-rose-600 text-white px-6 py-3 rounded-xl font-bold text-2xl shadow-xl border-4 border-white rotate-12 flex items-center gap-2">
+                      <Heart className="w-6 h-6 fill-current" />
                     </div>
                   </div>
-                  {/* NOPE indicator */}
+                  {/* X indicator */}
                   <div 
                     className="absolute top-12 right-8 z-30 pointer-events-none transition-opacity duration-200"
                     style={{ opacity: Math.max(0, Math.min(1, -dragOffset.x / 100)) }}
                   >
-                    <div className="bg-red-500 text-white px-6 py-3 rounded-xl font-bold text-2xl shadow-xl border-4 border-white -rotate-12">
-                      NOPE
+                    <div className="bg-gray-500 text-white px-6 py-3 rounded-xl font-bold text-2xl shadow-xl border-4 border-white -rotate-12 flex items-center gap-2">
+                      <X className="w-6 h-6" />
                     </div>
                   </div>
                 </>
@@ -790,11 +797,10 @@ export default function HomePage() {
               <div className="absolute bottom-0 left-0 right-0 p-6 pb-24 text-white z-20 pointer-events-none">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex-1">
-                    <h2 className="text-3xl font-bold drop-shadow-lg">
+                    <h2 className="text-3xl font-bold drop-shadow-lg mb-2">
                       {currentProfile.nickname}
-                      <span className="text-2xl font-normal ml-2">{currentProfile.year_level}</span>
                     </h2>
-                    <p className="text-lg opacity-95 mt-1 flex items-center gap-2">
+                    <p className="text-lg opacity-95 flex items-center gap-2">
                       <span className="font-medium">{currentProfile.college}</span>
                       {currentProfile.gender && (
                         <>
@@ -802,7 +808,31 @@ export default function HomePage() {
                           <span className="text-base opacity-75">{currentProfile.gender}</span>
                         </>
                       )}
+                      {currentProfile.year_level && (
+                        <>
+                          <span className="opacity-50">•</span>
+                          <span className="text-base opacity-75">
+                            {currentProfile.year_level === 1 ? '1st Year' :
+                             currentProfile.year_level === 2 ? '2nd Year' :
+                             currentProfile.year_level === 3 ? '3rd Year' :
+                             currentProfile.year_level === 4 ? '4th Year' :
+                             currentProfile.year_level === 5 ? '5th Year' :
+                             `${currentProfile.year_level}th Year`}
+                          </span>
+                        </>
+                      )}
                     </p>
+                    {currentProfile.looking_for && (
+                      <p className="text-sm opacity-90 mt-2 flex items-center gap-2">
+                        <span className="bg-gradient-to-r from-rose-600 to-red-500 px-3 py-1 rounded-full text-white font-medium shadow-md">
+                          {currentProfile.looking_for === 'Study Buddy' ? '📚 Study Buddy' : 
+                           currentProfile.looking_for === 'Romantic' ? '💕 Romantic' :
+                           currentProfile.looking_for === 'Friendship' ? '🤝 Friendship' :
+                           currentProfile.looking_for === 'Networking' ? '💼 Networking' :
+                           '✨ Open to Everything'}
+                        </span>
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -850,13 +880,13 @@ export default function HomePage() {
             <div className="absolute bottom-8 left-0 right-0 flex justify-center items-center gap-6 z-30">
               <button 
                 onClick={() => handleSwipe('left')}
-                className="w-16 h-16 bg-white rounded-full shadow-xl flex items-center justify-center text-red-500 hover:scale-110 active:scale-95 transition-transform border-2 border-gray-100"
+                className="w-16 h-16 bg-white rounded-full shadow-xl flex items-center justify-center text-gray-500 hover:scale-110 active:scale-95 transition-transform border-2 border-gray-100"
               >
                 <X size={32} strokeWidth={2.5} />
               </button>
               <button 
                 onClick={() => handleSwipe('right')}
-                className="w-20 h-20 bg-ue-red rounded-full shadow-xl flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-transform"
+                className="w-20 h-20 bg-gradient-to-r from-rose-600 to-red-500 rounded-full shadow-xl flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-transform"
               >
                 <Heart size={36} fill="currentColor" strokeWidth={0} />
               </button>
@@ -865,9 +895,9 @@ export default function HomePage() {
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-center px-8">
             <div className="bg-white rounded-3xl p-12 shadow-xl max-w-sm">
-              <Heart className="w-20 h-20 mx-auto mb-6 text-ue-red opacity-20" />
+              <Users className="w-20 h-20 mx-auto mb-6 text-rose-600 opacity-20" />
               <h2 className="text-2xl font-bold text-gray-800 mb-2">No More Profiles</h2>
-              <p className="text-gray-500">Check back later for new matches!</p>
+              <p className="text-gray-500">Check back later for new connections!</p>
             </div>
           </div>
         )}
