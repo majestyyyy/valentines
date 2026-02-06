@@ -132,13 +132,11 @@ export default function LoginPage() {
     setLoading(true);
     setMessage('');
 
-    /* DISABLED FOR TESTING - Email validation
     if (!email.endsWith('@ue.edu.ph')) {
       setMessage('Only @ue.edu.ph emails are allowed.');
       setLoading(false);
       return;
     }
-    */
 
     if (password !== confirmPassword) {
       setMessage('Passwords do not match.');
@@ -194,13 +192,11 @@ export default function LoginPage() {
     setLoading(true);
     setMessage('');
 
-    /* DISABLED FOR TESTING - Email validation
     if (!email.endsWith('@ue.edu.ph')) {
-      setMessage('Only @ue.edu.ph emails are allowed.');
+      setMessage('Only UE student is allowed.');
       setLoading(false);
       return;
     }
-    */
 
     try {
       // Send OTP to email
