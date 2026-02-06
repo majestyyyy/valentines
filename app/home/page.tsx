@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/supabase';
+import { get3RandomMissions } from '@/lib/missions';
 import { Heart, X, MessageCircle, Bell, User, AlertTriangle, Users, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -411,10 +412,15 @@ export default function HomePage() {
       const [, { data: theirSwipe }] = await Promise.all([swipePromise, matchCheckPromise]);
       
       if (theirSwipe) {
-        // It's a match!
+        // It's a match! Assign 3 random missions
+        const [mission1, mission2, mission3] = get3RandomMissions();
         await (supabase as any).from('matches').insert({
           user1_id: user.id,
-          user2_id: currentProfile.id
+          user2_id: currentProfile.id,
+          mission_1_id: mission1.id,
+          mission_2_id: mission2.id,
+          mission_3_id: mission3.id,
+          mission_number: 1
         });
         
         setMatchPopup(currentProfile);
@@ -850,7 +856,7 @@ export default function HomePage() {
 
                 {currentProfile.description && (
                   <div className="mb-3 pointer-events-auto">
-                    <p className={`text-sm opacity-90 drop-shadow ${
+                    <p className={`text-sm opacity-90 drop-shadow break-words whitespace-pre-wrap ${
                       isDescriptionExpanded ? '' : 'line-clamp-2'
                     }`}>
                       {currentProfile.description}

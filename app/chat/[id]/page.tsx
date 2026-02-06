@@ -9,6 +9,7 @@ import { useParams } from 'next/navigation';
 import { validateText } from '@/lib/profanityFilter';
 import { sanitizeInput } from '@/lib/security';
 import Modal from '@/components/Modal';
+import { getMissionById, type Mission } from '@/lib/missions';
 
 type Message = Database['public']['Tables']['messages']['Row'];
 
@@ -18,6 +19,9 @@ export default function ChatRoom() {
   const [newMessage, setNewMessage] = useState('');
   const [currentUserId, setCurrentUserId] = useState('');
   const [task, setTask] = useState<any | null>(null);
+  const [mission, setMission] = useState<Mission | null>(null);
+  const [missionNumber, setMissionNumber] = useState(1);
+  const [allMissionsCompleted, setAllMissionsCompleted] = useState(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -141,69 +145,55 @@ export default function ChatRoom() {
       if (data) setMessages(data);
     };
 
-    // 3. Load or Create Task
-    const setupTask = async () => {
-        // Fetch existing task - get the LATEST one if multiple exist (order by created_at DESC)
-        const { data: existingTasks, error: fetchError } = await (supabase as any)
-            .from('tasks')
-            .select('*')
-            .eq('match_id', matchId)
-            .order('created_at', { ascending: false })
-            .limit(1);
-        
-        if (fetchError) {
-            console.error('Error fetching task:', fetchError);
-        }
-        
-        // Use the latest task if found
-        const existingTask = existingTasks && existingTasks.length > 0 ? existingTasks[0] : null;
-        
-        if (existingTask) {
-            // Found existing task - use it regardless of completion state
-            console.log('Found existing task:', existingTask);
-            setTask(existingTask);
-        } else {
-            // No existing task found - create mission 1 ONLY if no task exists
-            console.log('No existing task found, creating mission 1');
-            const mission1 = "Share your favorite UE memory with each other";
-            
-            // Try to insert first mission
-            const { data: newTask, error: insertError } = await (supabase as any)
-                .from('tasks')
-                .insert({ 
-                    match_id: matchId as string, 
-                    description: mission1,
-                    mission_number: 1,
-                    is_completed: false
-                })
-                .select()
+    // 3. Load Mission from Match (optional - chat works without missions)
+    const setupMission = async () => {
+        try {
+            // Fetch mission from matches table
+            const { data: matchData, error: fetchError } = await (supabase as any)
+                .from('matches')
+                .select('mission_1_id, mission_2_id, mission_3_id, mission_number, mission_completed')
+                .eq('id', matchId)
                 .single();
             
-            if (insertError) {
-                console.error('Error inserting task:', insertError);
-                // If insert failed (likely because other user already created it), fetch again
-                const { data: refetchedTasks } = await (supabase as any)
-                    .from('tasks')
-                    .select('*')
-                    .eq('match_id', matchId)
-                    .order('created_at', { ascending: false })
-                    .limit(1);
-                
-                const refetchedTask = refetchedTasks && refetchedTasks.length > 0 ? refetchedTasks[0] : null;
-                
-                if (refetchedTask) {
-                    console.log('Refetched task after insert error:', refetchedTask);
-                    setTask(refetchedTask);
-                }
-            } else if (newTask) {
-                console.log('Created new task:', newTask);
-                setTask(newTask);
+            if (fetchError) {
+                // Mission columns might not exist yet - that's okay, chat still works
+                console.log('Mission system not enabled yet (run add_mission_system.sql):', fetchError.message);
+                return;
             }
+            
+            if (matchData) {
+                const currentMissionNum = matchData.mission_number || 1;
+                setMissionNumber(currentMissionNum);
+                setAllMissionsCompleted(matchData.mission_completed || false);
+                
+                // Get the current mission ID based on mission_number
+                let currentMissionId;
+                if (currentMissionNum === 1) {
+                    currentMissionId = matchData.mission_1_id;
+                } else if (currentMissionNum === 2) {
+                    currentMissionId = matchData.mission_2_id;
+                } else if (currentMissionNum === 3) {
+                    currentMissionId = matchData.mission_3_id;
+                }
+                
+                if (currentMissionId) {
+                    const missionDetails = getMissionById(currentMissionId);
+                    if (missionDetails) {
+                        console.log(`Loaded mission ${currentMissionNum}/3:`, missionDetails);
+                        setMission(missionDetails);
+                    }
+                }
+            } else {
+                console.log('No mission assigned to this match yet');
+            }
+        } catch (error) {
+            // Catch any unexpected errors - chat should still work
+            console.error('Error in setupMission:', error);
         }
     };
 
     fetchMessages();
-    setupTask();
+    setupMission();
 
     // 4. Subscribe to real-time updates
     const channel = supabase
@@ -225,24 +215,42 @@ export default function ChatRoom() {
            return [...current, newMsg];
          });
       })
-      // Subscribe to task updates (when partner completes the task)
+      // Subscribe to mission updates (when partner completes the mission)
       .on('postgres_changes', {
          event: 'UPDATE',
          schema: 'public',
-         table: 'tasks',
-         filter: `match_id=eq.${matchId}`
+         table: 'matches',
+         filter: `id=eq.${matchId}`
       }, (payload) => {
-         console.log('Real-time task update:', payload);
-         setTask(payload.new as any);
-      })
-      .on('postgres_changes', {
-         event: 'INSERT',
-         schema: 'public',
-         table: 'tasks',
-         filter: `match_id=eq.${matchId}`
-      }, (payload) => {
-         console.log('Real-time task insert:', payload);
-         setTask(payload.new as any);
+         console.log('Real-time mission update:', payload);
+         const updatedMatch = payload.new as any;
+         
+         // Update mission number and completion status
+         if (updatedMatch.mission_number !== undefined) {
+           const newMissionNum = updatedMatch.mission_number;
+           setMissionNumber(newMissionNum);
+           
+           // Load the new mission
+           let newMissionId;
+           if (newMissionNum === 1) {
+             newMissionId = updatedMatch.mission_1_id;
+           } else if (newMissionNum === 2) {
+             newMissionId = updatedMatch.mission_2_id;
+           } else if (newMissionNum === 3) {
+             newMissionId = updatedMatch.mission_3_id;
+           }
+           
+           if (newMissionId) {
+             const missionDetails = getMissionById(newMissionId);
+             if (missionDetails) {
+               setMission(missionDetails);
+             }
+           }
+         }
+         
+         if (updatedMatch.mission_completed !== undefined) {
+           setAllMissionsCompleted(updatedMatch.mission_completed);
+         }
       })
       .subscribe((status, err) => {
         console.log('Realtime subscription status:', status);
@@ -424,53 +432,60 @@ export default function ChatRoom() {
     }
   };
   const completeTask = async () => {
-    if (!task || task.is_completed) return;
+    if (!mission || allMissionsCompleted) return;
     
-    const currentMissionNumber = task.mission_number || 1;
-    
-    // Only advance to next mission if not on mission 3
-    if (currentMissionNumber < 3) {
-      const nextMissionNumber = currentMissionNumber + 1;
-      let nextMissionDescription = '';
-      
-      if (nextMissionNumber === 2) {
-        nextMissionDescription = "Take a photo together while sharing chocolates or candies 🍫";
-      } else if (nextMissionNumber === 3) {
-        nextMissionDescription = "Visit the Tan Yan Kee Garden together and take a photo 🌸";
-      }
-      
-      // Single update: advance to next mission directly (no intermediate completed state)
+    // Check if this is the last mission
+    if (missionNumber === 3) {
+      // Last mission - mark all missions as completed
       const { data, error } = await (supabase as any)
-        .from('tasks')
+        .from('matches')
         .update({
-          description: nextMissionDescription,
-          mission_number: nextMissionNumber,
-          is_completed: false
+          mission_completed: true,
+          mission_completed_at: new Date().toISOString()
         })
-        .eq('id', task.id)
+        .eq('id', matchId)
         .select()
         .single();
       
       if (data) {
-        setTask(data);
+        setAllMissionsCompleted(true);
+        console.log('All missions completed!');
       } else if (error) {
-        console.error('Error updating to next mission:', error);
+        console.error('Error completing final mission:', error);
       }
     } else {
-      // Mission 3 - mark as completed and STAY on mission 3
-      const { data } = await (supabase as any)
-        .from('tasks')
-        .update({ is_completed: true })
-        .eq('id', task.id)
-        .select()
+      // Not the last mission - advance to next mission
+      const nextMissionNumber = missionNumber + 1;
+      
+      const { data, error } = await (supabase as any)
+        .from('matches')
+        .update({
+          mission_number: nextMissionNumber
+        })
+        .eq('id', matchId)
+        .select('mission_1_id, mission_2_id, mission_3_id')
         .single();
       
-      if (data) setTask(data);
+      if (data) {
+        setMissionNumber(nextMissionNumber);
+        
+        // Load next mission
+        const nextMissionId = nextMissionNumber === 2 ? data.mission_2_id : data.mission_3_id;
+        if (nextMissionId) {
+          const nextMission = getMissionById(nextMissionId);
+          if (nextMission) {
+            setMission(nextMission);
+            console.log(`Advanced to mission ${nextMissionNumber}/3:`, nextMission);
+          }
+        }
+      } else if (error) {
+        console.error('Error advancing to next mission:', error);
+      }
     }
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-gradient-to-br from-rose-50 via-red-50 to-pink-50 overflow-hidden">
+    <div className="fixed inset-0 flex flex-col bg-gradient-to-br from-rose-50 via-red-50 to-pink-50 overflow-hidden" data-scroll-lock="true">
       {/* Header */}
       <header className="bg-gradient-to-r from-rose-600 to-red-500 p-4 shadow-lg flex items-center gap-3 flex-shrink-0 z-20">
         <Link href="/chat" className="p-2 hover:bg-white/20 rounded-full transition-colors">
@@ -517,45 +532,53 @@ export default function ChatRoom() {
       </header>
 
       {/* Match Mission Banner */}
-      {task && (
-         <div className={`p-5 border-b-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-all duration-300 animate-in slide-in-from-top flex-shrink-0 z-10 shadow-lg ${task.is_completed ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200' : 'bg-gradient-to-r from-rose-50 via-red-50 to-pink-50 border-rose-200'}`}>
+      {mission && !allMissionsCompleted && (
+         <div className="p-5 border-b-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-all duration-300 animate-in slide-in-from-top flex-shrink-0 z-10 shadow-lg bg-gradient-to-r from-rose-50 via-red-50 to-pink-50 border-rose-200">
              <div className="flex-1">
                  <div className="flex items-center gap-2 mb-2">
-                   <span className="text-2xl animate-pulse">💕</span>
+                   <span className="text-2xl animate-pulse">{mission.emoji}</span>
                    <p className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-red-600 uppercase tracking-wide">
-                     Match Mission {task.mission_number || 1}/3
+                     Mission {missionNumber}/3
                    </p>
+                   
                  </div>
-                 <p className={`text-base font-semibold ${task.is_completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
-                    {task.description}
+                 <p className="text-base font-semibold text-gray-900">
+                    {mission.description}
                  </p>
-                 {!task.is_completed && (
-                   <p className="text-xs text-gray-600 mt-1">Complete together to strengthen your bond! 💪</p>
-                 )}
-                 {task.is_completed && task.mission_number < 3 && (
-                   <p className="text-xs text-green-700 mt-1 font-medium">✨ Mission accomplished! Loading next mission...</p>
-                 )}
-                 {task.is_completed && task.mission_number === 3 && (
-                   <p className="text-xs text-green-700 mt-1 font-medium">🎉 All missions completed! You make a great team!</p>
-                 )}
+                 
+                 <p className="text-xs text-gray-600 mt-1">Complete together to strengthen your bond! 💪</p>
              </div>
              <button 
                 onClick={completeTask}
-                disabled={task.is_completed === true}
-                className={`px-6 py-3 rounded-full font-bold text-sm transition-all duration-200 hover:scale-105 active:scale-95 shadow-md whitespace-nowrap ${task.is_completed ? 'bg-green-500 text-white shadow-green-200 cursor-default' : 'bg-gradient-to-r from-rose-600 to-red-500 text-white hover:shadow-xl hover:shadow-rose-200'}`}
+                className="px-6 py-3 rounded-full font-bold text-sm transition-all duration-200 hover:scale-105 active:scale-95 shadow-md whitespace-nowrap bg-gradient-to-r from-rose-600 to-red-500 text-white hover:shadow-xl hover:shadow-rose-200"
              >
-                {task.is_completed ? (
-                  <span className="flex items-center gap-2">
-                    <CheckCircle2 size={18} />
-                    Completed!
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <CheckCircle2 size={18} />
-                    Mark Done
-                  </span>
-                )}
+                <span className="flex items-center gap-2">
+                  <CheckCircle2 size={18} />
+                  {missionNumber === 3 ? 'Complete All' : 'Mark Done'}
+                </span>
              </button>
+         </div>
+      )}
+      
+      {/* All Missions Completed Banner */}
+      {allMissionsCompleted && (
+         <div className="p-5 border-b-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-all duration-300 animate-in slide-in-from-top flex-shrink-0 z-10 shadow-lg bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+             <div className="flex-1">
+                 <div className="flex items-center gap-2 mb-2">
+                   <span className="text-2xl">🎉</span>
+                   <p className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-600 uppercase tracking-wide">
+                     All Missions Complete!
+                   </p>
+                 </div>
+                 <p className="text-base font-semibold text-gray-900">
+                    You've completed all 3 missions together!
+                 </p>
+                 <p className="text-xs text-green-700 mt-1 font-medium">🌟 Great teamwork! Keep the connection going!</p>
+             </div>
+             <div className="px-6 py-3 rounded-full font-bold text-sm bg-green-500 text-white shadow-green-200 flex items-center gap-2">
+               <CheckCircle2 size={18} />
+               3/3 Done!
+             </div>
          </div>
       )}
 
