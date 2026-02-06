@@ -97,7 +97,29 @@ export default function LikesPage() {
       from_profile: notif.from_profile
     }));
 
-    setNotifications(transformedNotifs);
+    // Filter out notifications from users we're already matched with
+    const filteredNotifs = [];
+    for (const notif of transformedNotifs) {
+      // Check if we're already matched with this user
+      const { data: existingMatch } = await (supabase as any)
+        .from('matches')
+        .select('*')
+        .or(`and(user1_id.eq.${user.id},user2_id.eq.${notif.from_user_id}),and(user1_id.eq.${notif.from_user_id},user2_id.eq.${user.id})`)
+        .maybeSingle();
+
+      // Only include if not already matched
+      if (!existingMatch) {
+        filteredNotifs.push(notif);
+      } else {
+        // Delete the notification since they're already matched
+        await (supabase as any)
+          .from('notifications')
+          .delete()
+          .eq('id', notif.id);
+      }
+    }
+
+    setNotifications(filteredNotifs);
     setLoading(false);
 
     // Mark all as read
@@ -153,10 +175,22 @@ export default function LikesPage() {
 
         // Show reveal message with their name
         showModal('success', "It's a Match!", `It's a match with ${notif.from_profile.nickname || 'your admirer'}! 💕 Check your messages!`);
+        
+        // Delete the notification since they're now matched
+        await (supabase as any)
+          .from('notifications')
+          .delete()
+          .eq('id', notif.id);
       }
     } else {
-      // Passed on them
+      // User swiped LEFT - passed on them
       showModal('info', 'Passed', "Passed! They won't know you saw this.");
+      
+      // Delete the notification since user rejected them
+      await (supabase as any)
+        .from('notifications')
+        .delete()
+        .eq('id', notif.id);
     }
 
     // Remove from list

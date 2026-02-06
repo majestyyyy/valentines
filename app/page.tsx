@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Heart, Mail, Key, Lock } from 'lucide-react';
+import { Heart, Mail, Key, Lock, Smartphone, Monitor } from 'lucide-react';
+import TermsModal from '@/components/TermsModal';
 
 export default function LoginPage() {
+  const [isMobile, setIsMobile] = useState(false);
   const [mode, setMode] = useState<'login' | 'signup' | 'verify' | 'forgot-password'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -13,8 +15,20 @@ export default function LoginPage() {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Check if mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     // Check if redirected due to ban
@@ -23,6 +37,28 @@ export default function LoginPage() {
       setMessage('Your account has been permanently banned. You cannot access this service.');
     }
   }, [searchParams]);
+
+  const handleTermsAccept = async () => {
+    if (!pendingUserId) return;
+
+    try {
+      const { error } = await (supabase as any)
+        .from('profiles')
+        .update({
+          terms_accepted_at: new Date().toISOString(),
+        })
+        .eq('id', pendingUserId);
+
+      if (error) throw error;
+
+      setShowTermsModal(false);
+      setPendingUserId(null);
+      router.push('/profile-setup');
+    } catch (error) {
+      console.error('Error accepting terms:', error);
+      setMessage('Failed to save your acceptance. Please try again.');
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +88,7 @@ export default function LoginPage() {
         // Check if user has a profile with complete data
         const { data: profile } = await (supabase as any)
           .from('profiles')
-          .select('status, nickname, photo_urls, is_banned')
+          .select('status, nickname, photo_urls, is_banned, terms_accepted_at')
           .eq('id', data.user.id)
           .single();
 
@@ -67,7 +103,14 @@ export default function LoginPage() {
 
         // If no profile OR profile exists but is incomplete (missing nickname or photos)
         if (!profile || !profile.nickname || !profile.photo_urls || profile.photo_urls.length === 0) {
-          router.push('/profile-setup');
+          // Check if terms have been accepted
+          if (!profile?.terms_accepted_at) {
+            // Show terms modal
+            setPendingUserId(data.user.id);
+            setShowTermsModal(true);
+          } else {
+            router.push('/profile-setup');
+          }
         } else if (profile.status === 'pending') {
           router.push('/profile-setup/pending');
         } else if (profile.status === 'approved') {
@@ -89,7 +132,7 @@ export default function LoginPage() {
     setLoading(true);
     setMessage('');
 
-    /* Email validation
+    /* DISABLED FOR TESTING - Email validation
     if (!email.endsWith('@ue.edu.ph')) {
       setMessage('Only @ue.edu.ph emails are allowed.');
       setLoading(false);
@@ -245,7 +288,7 @@ export default function LoginPage() {
       if (data.user) {
         const { data: profile } = await (supabase as any)
           .from('profiles')
-          .select('status, nickname, photo_urls, is_banned')
+          .select('status, nickname, photo_urls, is_banned, terms_accepted_at')
           .eq('id', data.user.id)
           .single();
 
@@ -257,7 +300,14 @@ export default function LoginPage() {
         }
 
         if (!profile || !profile.nickname || !profile.photo_urls || profile.photo_urls.length === 0) {
-          router.push('/profile-setup');
+          // Check if terms have been accepted
+          if (!profile?.terms_accepted_at) {
+            // Show terms modal
+            setPendingUserId(data.user.id);
+            setShowTermsModal(true);
+          } else {
+            router.push('/profile-setup');
+          }
         } else if (profile.status === 'pending') {
           router.push('/profile-setup/pending');
         } else if (profile.status === 'approved') {
@@ -274,10 +324,75 @@ export default function LoginPage() {
     }
   };
 
+  // Desktop users see landing page suggesting mobile use
+  // Mobile users go straight to login/signup
+  if (!isMobile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center p-6">
+        <div className="max-w-2xl w-full bg-white rounded-3xl shadow-2xl p-12 text-center border-2 border-gray-200">
+          <div className="mb-8">
+            <div className="w-24 h-24 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full mx-auto mb-6 flex items-center justify-center shadow-xl">
+              <Heart className="w-12 h-12 text-white fill-white" />
+            </div>
+            <h1 className="text-5xl font-black text-gray-800 mb-3">
+              yUE Match
+            </h1>
+            <p className="text-gray-600 text-lg">
+              Connect with UE Students
+            </p>
+          </div>
+
+          <div className="bg-blue-50 rounded-2xl p-8 mb-8 border-2 border-blue-200">
+            <Monitor className="w-16 h-16 mx-auto mb-4 text-blue-600" />
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Mobile-Only Experience</h2>
+            <p className="text-gray-700 mb-6 leading-relaxed">
+              yUE Match is exclusively designed for mobile devices to provide the best swiping and matching experience. 
+              Please access this app on your smartphone to get started.
+            </p>
+            <div className="flex items-center justify-center gap-3 text-sm text-gray-600">
+              <Smartphone className="w-5 h-5 text-blue-600" />
+              <span className="font-semibold">Open this page on your mobile device</span>
+            </div>
+          </div>
+
+          <div className="space-y-4 mb-8">
+            <div className="flex items-center gap-4 text-gray-700 bg-gray-50 rounded-xl p-4">
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0 shadow-sm border-2 border-gray-200">
+                <Heart className="w-6 h-6 text-blue-600 fill-blue-600" />
+              </div>
+              <p className="text-left">Find romantic connections, friends, study buddies, and networking opportunities</p>
+            </div>
+            <div className="flex items-center gap-4 text-gray-700 bg-gray-50 rounded-xl p-4">
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0 shadow-sm border-2 border-gray-200">
+                <span className="text-2xl">🎓</span>
+              </div>
+              <p className="text-left">Exclusive to University of the East students</p>
+            </div>
+            <div className="flex items-center gap-4 text-gray-700 bg-gray-50 rounded-xl p-4">
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0 shadow-sm border-2 border-gray-200">
+                <span className="text-2xl">✨</span>
+              </div>
+              <p className="text-left">Safe, verified community with admin moderation</p>
+            </div>
+          </div>
+
+          <div className="pt-6 border-t-2 border-gray-200">
+            <p className="text-sm text-gray-500 mb-2">
+              🔒 Secure • 🎯 UE Verified • 💬 Real Connections
+            </p>
+            <p className="text-xs text-gray-400">
+              For the best experience, please use a mobile device
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Main Auth Page
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center p-6 bg-gradient-to-br from-rose-50 via-red-50 to-pink-50">
-      <div className="w-full max-w-md relative z-10">
-        {/* Logo Section */}
+      <div className="w-full max-w-md relative z-10">{/* Logo Section */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-rose-600 to-red-500 rounded-full mb-6 shadow-2xl animate-pulse">
             <Heart className="w-14 h-14 text-white fill-white" />
@@ -287,8 +402,7 @@ export default function LoginPage() {
         </div>
 
         {/* Login/Signup/Verify Card */}
-        <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-8 border-2 border-rose-200/50">
-          {mode === 'verify' ? (
+        <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-8 border-2 border-rose-200/50">{mode === 'verify' ? (
             // OTP Verification Form
             <form onSubmit={handleVerifyOtp} className="space-y-6">
               <div className="text-center mb-6">
@@ -582,6 +696,16 @@ export default function LoginPage() {
           </a>
         </p>
       </div>
+
+      {/* Terms Modal */}
+      <TermsModal
+        isOpen={showTermsModal}
+        onClose={() => {
+          setShowTermsModal(false);
+          setPendingUserId(null);
+        }}
+        onAccept={handleTermsAccept}
+      />
     </main>
   );
 }

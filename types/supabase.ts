@@ -20,10 +20,11 @@ export interface Database {
           hobbies: string[] | null
           description: string | null
           gender: 'Male' | 'Female' | 'Non-binary' | 'Other' | null
-          preferred_gender: 'Male' | 'Female' | 'Non-binary' | 'Other' | 'Everyone' | null
+          preferred_gender: 'Male' | 'Female' | 'Non-binary' | null
           looking_for: 'Romantic' | 'Friendship' | 'Study Buddy' | 'Networking' | 'Everyone' | null
           role: 'admin' | 'user'
           status: 'pending' | 'approved' | 'rejected'
+          terms_accepted_at: string | null
           created_at: string
         }
         Insert: {
@@ -36,10 +37,11 @@ export interface Database {
           hobbies?: string[] | null
           description?: string | null
           gender?: 'Male' | 'Female' | 'Non-binary' | 'Other' | null
-          preferred_gender?: 'Male' | 'Female' | 'Non-binary' | 'Other' | 'Everyone' | null
+          preferred_gender?: 'Male' | 'Female' | 'Non-binary' | null
           looking_for?: 'Romantic' | 'Friendship' | 'Study Buddy' | 'Networking' | 'Everyone' | null
           role?: 'admin' | 'user'
           status?: 'pending' | 'approved' | 'rejected'
+          terms_accepted_at?: string | null
           created_at?: string
         }
         Update: {
@@ -52,10 +54,11 @@ export interface Database {
           hobbies?: string[] | null
           description?: string | null
           gender?: 'Male' | 'Female' | 'Non-binary' | 'Other' | null
-          preferred_gender?: 'Male' | 'Female' | 'Non-binary' | 'Other' | 'Everyone' | null
+          preferred_gender?: 'Male' | 'Female' | 'Non-binary' | null
           looking_for?: 'Romantic' | 'Friendship' | 'Study Buddy' | 'Networking' | 'Everyone' | null
           role?: 'admin' | 'user'
           status?: 'pending' | 'approved' | 'rejected'
+          terms_accepted_at?: string | null
           created_at?: string
         }
       }

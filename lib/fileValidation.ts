@@ -9,19 +9,21 @@ const ALLOWED_IMAGE_TYPES = [
   'image/jpg',
   'image/png',
   'image/webp',
-  'image/gif'
+  'image/gif',
+  'image/heic',
+  'image/heif'
 ];
 
-// Maximum file size: 5MB
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+// Maximum file size: 15MB (to accommodate high-res mobile photos)
+const MAX_FILE_SIZE = 15 * 1024 * 1024;
 
 // Minimum image dimensions
 const MIN_WIDTH = 200;
 const MIN_HEIGHT = 200;
 
-// Maximum image dimensions (prevent memory attacks)
-const MAX_WIDTH = 4096;
-const MAX_HEIGHT = 4096;
+// Maximum image dimensions (allow typical mobile camera resolutions)
+const MAX_WIDTH = 8192;  // 8K resolution support
+const MAX_HEIGHT = 8192;
 
 export interface FileValidationResult {
   valid: boolean;
@@ -37,7 +39,7 @@ export async function validateFileType(file: File): Promise<FileValidationResult
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
     return {
       valid: false,
-      error: `Invalid file type: ${file.type}. Only JPEG, PNG, WebP, and GIF images are allowed.`
+      error: `Invalid file type: ${file.type}. Only JPEG, PNG, WebP, GIF, and HEIC images are allowed.`
     };
   }
 
@@ -55,7 +57,9 @@ export async function validateFileType(file: File): Promise<FileValidationResult
     (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38) ||
     // WebP: 52 49 46 46 (RIFF) and bytes[8-11] are 57 45 42 50 (WEBP)
     (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
-     bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50)
+     bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) ||
+    // HEIC/HEIF: Check for ftyp box (common in HEIC files)
+    (bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70)
   );
 
   if (!isValidImage) {
@@ -76,7 +80,7 @@ export function validateFileSize(file: File): FileValidationResult {
     const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
     return {
       valid: false,
-      error: `File size (${sizeMB}MB) exceeds maximum allowed size of 5MB.`
+      error: `File size (${sizeMB}MB) exceeds maximum allowed size of 15MB.`
     };
   }
 

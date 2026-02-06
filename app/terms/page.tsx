@@ -7,7 +7,7 @@ export default function TermsPage() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 to-red-50 p-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
@@ -23,17 +23,17 @@ export default function TermsPage() {
         {/* Content */}
         <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 prose prose-sm max-w-none">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-red-600 mb-2">yUE Match!</h2>
+            <h2 className="text-3xl font-bold text-rose-600 mb-2">yUE Match</h2>
             <p className="text-gray-600">Terms of Service & Privacy Policy</p>
-            <p className="text-sm text-gray-500 mt-2">Last Updated: February 3, 2026</p>
+            <p className="text-sm text-gray-500 mt-2">Last Updated: February 6, 2026</p>
           </div>
 
           <section className="mb-8">
             <h3 className="text-xl font-bold text-gray-800 mb-4">1. Acceptance of Terms</h3>
             <p className="text-gray-700 mb-3">
-              By accessing or using yUE Match!, you agree to be bound by these Terms of Service and Privacy Policy.
+              By accessing or using yUE Match, you agree to be bound by these Terms of Service and Privacy Policy.
             </p>
-            <div className="bg-red-50 border-l-4 border-red-600 p-4 mb-4">
+            <div className="bg-rose-50 border-l-4 border-rose-600 p-4 mb-4">
               <h4 className="font-semibold text-gray-800 mb-2">Eligibility Requirements:</h4>
               <ul className="list-disc list-inside space-y-1 text-gray-700">
                 <li>Must be a currently enrolled UE student</li>
@@ -47,8 +47,8 @@ export default function TermsPage() {
           <section className="mb-8">
             <h3 className="text-xl font-bold text-gray-800 mb-4">2. Community Guidelines</h3>
             <div className="grid md:grid-cols-2 gap-4 mb-4">
-              <div className="bg-red-50 rounded-lg p-4">
-                <h4 className="font-semibold text-red-600 mb-2">❌ Prohibited Conduct</h4>
+              <div className="bg-rose-50 rounded-lg p-4">
+                <h4 className="font-semibold text-rose-600 mb-2">❌ Prohibited Conduct</h4>
                 <ul className="text-sm text-gray-700 space-y-1">
                   <li>• Harassment or bullying</li>
                   <li>• Fake profiles or impersonation</li>
@@ -188,9 +188,9 @@ export default function TermsPage() {
               </div>
             </div>
 
-            <div className="bg-red-100 border-l-4 border-red-600 p-4">
-              <h4 className="font-semibold text-red-800 mb-2">🚨 Red Flags - Report Immediately:</h4>
-              <ul className="text-sm text-red-900 space-y-1">
+            <div className="bg-rose-50 border-l-4 border-rose-600 p-4">
+              <h4 className="font-semibold text-rose-800 mb-2">🚨 Red Flags - Report Immediately:</h4>
+              <ul className="text-sm text-rose-900 space-y-1">
                 <li>• Asks for money or financial help</li>
                 <li>• Pressures for personal information</li>
                 <li>• Makes you uncomfortable or fearful</li>
@@ -211,7 +211,7 @@ export default function TermsPage() {
                 <p className="font-semibold text-gray-800 mb-2">Second Offense:</p>
                 <p className="text-sm text-gray-700">Temporary suspension (7 days)</p>
               </div>
-              <div className="bg-red-50 rounded-lg p-4">
+              <div className="bg-rose-50 rounded-lg p-4">
                 <p className="font-semibold text-gray-800 mb-2">Third Offense:</p>
                 <p className="text-sm text-gray-700">Permanent ban</p>
               </div>
@@ -221,7 +221,7 @@ export default function TermsPage() {
           <section className="mb-8">
             <h3 className="text-xl font-bold text-gray-800 mb-4">7. Philippines Data Privacy Act Compliance</h3>
             <p className="text-gray-700 mb-3">
-              yUE Match! complies with the <strong>Data Privacy Act of 2012 (Republic Act No. 10173)</strong> and follows best practices from international standards including GDPR principles and ISO 27001.
+              yUE Match complies with the <strong>Data Privacy Act of 2012 (Republic Act No. 10173)</strong> and follows best practices from international standards including GDPR principles and ISO 27001.
             </p>
           </section>
 
@@ -238,11 +238,11 @@ export default function TermsPage() {
           </section>
 
           <section className="mb-8">
-            <h3 className="text-xl font-bold text-red-600 mb-4">⚠️ IMPORTANT DISCLAIMER ⚠️</h3>
-            <div className="bg-red-50 border-2 border-red-500 rounded-xl p-6">
-              <h4 className="font-bold text-red-800 text-lg mb-3">Limitation of Liability</h4>
+            <h3 className="text-xl font-bold text-rose-600 mb-4">⚠️ IMPORTANT DISCLAIMER ⚠️</h3>
+            <div className="bg-rose-50 border-2 border-rose-500 rounded-xl p-6">
+              <h4 className="font-bold text-rose-800 text-lg mb-3">Limitation of Liability</h4>
               <p className="text-gray-800 mb-4 leading-relaxed">
-                <strong>yUE Match!</strong> is a platform designed to facilitate connections between University of the East students. 
+                <strong>yUE Match</strong> is a platform designed to facilitate connections between University of the East students. 
                 The application serves solely as a medium for communication and does not control or monitor the interactions between users.
               </p>
               <div className="bg-white rounded-lg p-4 mb-4">
@@ -275,7 +275,7 @@ export default function TermsPage() {
                 </ul>
               </div>
               <div className="bg-red-100 rounded-lg p-4">
-                <p className="text-red-900 font-semibold text-center">
+                <p className="text-rose-900 font-semibold text-center">
                   BY USING THIS PLATFORM, YOU ACKNOWLEDGE AND ACCEPT THAT YOU ENGAGE WITH OTHER USERS 
                   ENTIRELY AT YOUR OWN RISK AND DISCRETION. Users are responsible for their own safety, 
                   decisions, and actions both online and offline.
@@ -285,12 +285,12 @@ export default function TermsPage() {
           </section>
 
           <div className="border-t-2 border-gray-200 pt-6 mt-8">
-            <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-xl p-6 text-center">
+            <div className="bg-gradient-to-r from-rose-50 to-pink-50 rounded-xl p-6 text-center">
               <p className="text-gray-800 font-semibold mb-2">
-                By using yUE Match!, you acknowledge that you have read, understood, and agreed to these Terms of Service and Privacy Policy.
+                By using yUE Match, you acknowledge that you have read, understood, and agreed to these Terms of Service and Privacy Policy.
               </p>
               <p className="text-sm text-gray-600">
-                Questions or concerns? Contact us at <span className="text-red-600 font-semibold">noreply.uewelfare.official@gmail.com</span>
+                Questions or concerns? Contact us at <span className="text-rose-600 font-semibold">noreply.uewelfare.official@gmail.com</span>
               </p>
             </div>
           </div>

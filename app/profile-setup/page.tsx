@@ -12,14 +12,14 @@ import { validateImageFile, sanitizeFilename } from '@/lib/fileValidation';
 import Modal from '@/components/Modal';
 
 type College = Database['public']['Tables']['profiles']['Row']['college'];
-type Gender = 'Male' | 'Female' | 'Non-binary' | 'Other';
-type PreferredGender = 'Male' | 'Female' | 'Non-binary' | 'Other' | 'Everyone';
-type LookingFor = 'Romantic' | 'Friendship' | 'Study Buddy' | 'Networking' | 'Everyone';
+type Gender = 'Male' | 'Female' | 'Non-binary';
+type PreferredGender = 'Male' | 'Female' | 'Non-binary';
+type LookingFor = 'Romantic' | 'Friendship' | 'Study Buddy' | 'Networking';
 
 const COLLEGES: Array<'CAS' | 'CCSS' | 'CBA' | 'CEDUC' | 'CDENT' | 'CENG'> = ['CAS', 'CCSS', 'CBA', 'CEDUC', 'CDENT', 'CENG'];
-const GENDERS: Gender[] = ['Male', 'Female', 'Non-binary', 'Other'];
-const PREF_GENDERS: PreferredGender[] = ['Male', 'Female', 'Non-binary', 'Other', 'Everyone'];
-const LOOKING_FOR_OPTIONS: LookingFor[] = ['Romantic', 'Friendship', 'Study Buddy', 'Networking', 'Everyone'];
+const GENDERS: Gender[] = ['Male', 'Female', 'Non-binary'];
+const PREF_GENDERS: PreferredGender[] = ['Male', 'Female', 'Non-binary'];
+const LOOKING_FOR_OPTIONS: LookingFor[] = ['Romantic', 'Friendship', 'Study Buddy', 'Networking'];
 
 function ProfileSetupContent() {
   const router = useRouter();
@@ -29,6 +29,7 @@ function ProfileSetupContent() {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [hasExistingProfile, setHasExistingProfile] = useState(false);
   const [showGuidelines, setShowGuidelines] = useState(true);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [guidelinesAccepted, setGuidelinesAccepted] = useState({
     respectful: false,
     noSpam: false,
@@ -36,7 +37,6 @@ function ProfileSetupContent() {
     authenticity: false,
     privacy: false
   });
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [confirmedAge, setConfirmedAge] = useState(false);
   
   // Modal state
@@ -67,7 +67,7 @@ function ProfileSetupContent() {
     hobbies: '',
     description: '',
     gender: 'Male' as Gender,
-    preferred_gender: 'Everyone' as PreferredGender,
+    preferred_gender: 'Male' as PreferredGender,
     looking_for: 'Romantic' as LookingFor,
   });
 
@@ -77,6 +77,33 @@ function ProfileSetupContent() {
   const [previews, setPreviews] = useState<(string | null)[]>([null, null]);
   const fileInputRef1 = useRef<HTMLInputElement>(null);
   const fileInputRef2 = useRef<HTMLInputElement>(null);
+
+  // Check if user has accepted terms
+  useEffect(() => {
+    const checkTermsAcceptance = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/');
+        return;
+      }
+
+      const { data: profile } = await (supabase as any)
+        .from('profiles')
+        .select('terms_accepted_at')
+        .eq('id', session.user.id)
+        .single();
+
+      if (!profile?.terms_accepted_at) {
+        // Terms not accepted, redirect to login page which will show the modal
+        router.push('/');
+        return;
+      }
+
+      setTermsAccepted(true);
+    };
+
+    checkTermsAcceptance();
+  }, [router]);
 
   // Load existing profile on mount
   useEffect(() => {
@@ -136,7 +163,7 @@ function ProfileSetupContent() {
           hobbies: profile.hobbies?.join(', ') || '',
           description: profile.description || '',
           gender: profile.gender as Gender || 'Male',
-          preferred_gender: profile.preferred_gender as PreferredGender || 'Everyone',
+          preferred_gender: profile.preferred_gender as PreferredGender || 'Male',
           looking_for: profile.looking_for as LookingFor || 'Romantic',
         });
 
@@ -217,11 +244,6 @@ function ProfileSetupContent() {
 
     if (!confirmedAge) {
       showModal('warning', 'Age Verification Required', 'You must be 18 years old or above to use yUE Match!');
-      return;
-    }
-
-    if (!acceptedTerms) {
-      showModal('warning', 'Terms Required', 'Please accept the Terms of Service and Privacy Policy to continue');
       return;
     }
 
@@ -478,31 +500,6 @@ function ProfileSetupContent() {
               </div>
             </label>
 
-            <div className="bg-yellow-50 border-l-4 border-yellow-500 rounded-lg p-4 mt-6">
-              <div className="flex items-start gap-3">
-                <span className="text-xl">⚠️</span>
-                <div>
-                  <p className="font-semibold text-yellow-800">Violation Consequences</p>
-                  <p className="text-sm text-yellow-700 mt-1">
-                    Violating these guidelines may result in warnings, temporary suspension, or permanent account removal.
-                    We review all reports and take appropriate action.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-red-50 border-l-4 border-red-500 rounded-lg p-4 mt-4">
-              <div className="flex items-start gap-3">
-                <span className="text-xl">📋</span>
-                <div>
-                  <p className="font-semibold text-red-800">Disclaimer</p>
-                  <p className="text-sm text-red-700 mt-1">
-                    yUE Match is a platform to facilitate connections between University of the East students. Any relationship problems, disputes, emotional distress, or other issues that may arise from interactions on this platform are the sole responsibility of the users involved. The developer and the University of the East Student Council are NOT liable for any consequences, damages, or problems resulting from use of this application. Users engage at their own risk and discretion.
-                  </p>
-                </div>
-              </div>
-            </div>
-
             <button
               onClick={() => setShowGuidelines(false)}
               disabled={!allAccepted}
@@ -713,32 +710,9 @@ function ProfileSetupContent() {
           </label>
         </div>
 
-        {/* Terms & Privacy Acceptance */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <label className="flex items-start gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={acceptedTerms}
-              onChange={(e) => setAcceptedTerms(e.target.checked)}
-              className="mt-1 w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500"
-            />
-            <span className="text-sm text-gray-700">
-              I have read and agree to the{' '}
-              <a
-                href="/terms"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-red-600 hover:text-red-700 underline font-semibold"
-              >
-                Terms of Service and Privacy Policy
-              </a>
-            </span>
-          </label>
-        </div>
-
         <button
           type="submit"
-          disabled={loading || !confirmedAge || !acceptedTerms}
+          disabled={loading || !confirmedAge}
           className="w-full bg-gradient-to-r from-rose-600 to-red-500 text-white font-bold py-5 rounded-full shadow-xl hover:shadow-2xl transition-all active:scale-95 disabled:opacity-50 text-lg"
         >
           {loading ? '⏳ Creating Profile...' : '✨ Create My Profile'}

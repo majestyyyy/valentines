@@ -45,6 +45,7 @@ export default function HomePage() {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   const showModal = (type: 'info' | 'success' | 'error' | 'warning', title: string, message: string) => {
     setModal({ isOpen: true, type, title, message });
@@ -319,20 +320,30 @@ export default function HomePage() {
       .eq('status', 'approved')
       .filter('id', 'not.in', safeIds);
     
-    // Apply gender filters based on mutual interest
-    if (myProfileData.preferred_gender !== 'Everyone') {
-      // I prefer a specific gender - show only profiles of that gender
-      query = query.eq('gender', myProfileData.preferred_gender);
+    // Apply bidirectional gender matching
+    // Show profiles where BOTH conditions are true:
+    // 1. Their gender matches what I'm interested in (or I'm interested in Everyone)
+    // 2. I match what they're interested in (or they're interested in Everyone)
+    
+    if (myProfileData.preferred_gender && myProfileData.gender) {
+      // Build the mutual interest filter
+      // Show them if:
+      // - Their gender is what I want (or I want Everyone - legacy)
+      // AND
+      // - They want my gender (or they want Everyone - legacy)
       
-      // AND those profiles must also be interested in my gender (or Everyone)
-      if (myProfileData.gender) {
-        query = query.or(`preferred_gender.eq.Everyone,preferred_gender.eq.${myProfileData.gender}`);
+      const myGender = myProfileData.gender;
+      const myPreference = myProfileData.preferred_gender;
+      
+      // They must match what I'm looking for
+      if (myPreference !== 'Male' && myPreference !== 'Female' && myPreference !== 'Non-binary') {
+        // I'm interested in everyone (legacy "Everyone" or "Other"), so no gender filter
+      } else {
+        query = query.eq('gender', myPreference);
       }
-    } else {
-      // I prefer Everyone - show all profiles that are interested in my gender OR Everyone
-      if (myProfileData.gender) {
-        query = query.or(`preferred_gender.eq.Everyone,preferred_gender.eq.${myProfileData.gender}`);
-      }
+      
+      // And I must match what they're looking for
+      query = query.or(`preferred_gender.eq.${myGender},preferred_gender.eq.Everyone`);
     }
 
     query = query.limit(50); // Increased limit to show more candidates
@@ -378,6 +389,7 @@ export default function HomePage() {
     setProfiles(nextProfiles);
     setCurrentProfile(nextProfiles.length > 0 ? nextProfiles[0] : null);
     setPhotoIndex(0);
+    setIsDescriptionExpanded(false); // Reset description expansion
 
     // Record swipe in background
     const swipePromise = (supabase as any).from('swipes').insert({
@@ -837,9 +849,24 @@ export default function HomePage() {
                 </div>
 
                 {currentProfile.description && (
-                  <p className="text-sm opacity-90 mb-3 line-clamp-2 drop-shadow">
-                    {currentProfile.description}
-                  </p>
+                  <div className="mb-3">
+                    <p className={`text-sm opacity-90 drop-shadow ${
+                      isDescriptionExpanded ? '' : 'line-clamp-2'
+                    }`}>
+                      {currentProfile.description}
+                    </p>
+                    {currentProfile.description.length > 100 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsDescriptionExpanded(!isDescriptionExpanded);
+                        }}
+                        className="text-xs text-white/90 font-semibold mt-1 hover:text-white transition-colors"
+                      >
+                        {isDescriptionExpanded ? 'Show less' : 'Show more'}
+                      </button>
+                    )}
+                  </div>
                 )}
 
                 {currentProfile.hobbies && currentProfile.hobbies.length > 0 && (

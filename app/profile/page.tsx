@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { Database } from '@/types/supabase';
-import { Heart, ArrowLeft, Camera, Save, X, Edit2, LogOut, Trash2 } from 'lucide-react';
+import { Heart, ArrowLeft, Camera, Save, X, Edit2, LogOut, Trash2, HelpCircle, Mail, Phone, MapPin } from 'lucide-react';
 import { validateMultipleFields } from '@/lib/profanityFilter';
 import { sanitizeInput } from '@/lib/security';
 import { validateImageFile, sanitizeFilename } from '@/lib/fileValidation';
@@ -44,6 +44,7 @@ export default function ProfilePage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
   
   // Modal state
   const [modal, setModal] = useState<{
@@ -490,6 +491,14 @@ export default function ProfilePage() {
             {/* Account Actions */}
             <div className="space-y-3 pt-4 border-t border-gray-200">
               <button
+                onClick={() => setShowHelpModal(true)}
+                className="w-full bg-gradient-to-r from-rose-600 to-red-500 text-white py-3 rounded-full font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2"
+              >
+                <HelpCircle className="w-5 h-5" />
+                Help
+              </button>
+
+              <button
                 onClick={handleSignOut}
                 className="w-full bg-gray-100 text-gray-700 py-3 rounded-full font-semibold hover:bg-gray-200 transition-all flex items-center justify-center gap-2"
               >
@@ -563,75 +572,6 @@ export default function ProfilePage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">College *</label>
-                  <select
-                    value={formData.college || ''}
-                    onChange={(e) => setFormData({ ...formData, college: e.target.value as College })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-rose-600 focus:outline-none transition-colors text-gray-800"
-                  >
-                    {COLLEGES.map(college => (
-                      <option key={college} value={college}>{college}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Year Level *</label>
-                  <select
-                    value={formData.year_level}
-                    onChange={(e) => setFormData({ ...formData, year_level: parseInt(e.target.value) })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-rose-600 focus:outline-none transition-colors text-gray-800"
-                  >
-                    {[1, 2, 3, 4, 5].map(year => (
-                      <option key={year} value={year}>{year}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Gender *</label>
-                  <select
-                    value={formData.gender}
-                    onChange={(e) => setFormData({ ...formData, gender: e.target.value as Gender })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-rose-600 focus:outline-none transition-colors text-gray-800"
-                  >
-                    {GENDERS.map(gender => (
-                      <option key={gender} value={gender}>{gender}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Looking For *</label>
-                  <select
-                    value={formData.preferred_gender}
-                    onChange={(e) => setFormData({ ...formData, preferred_gender: e.target.value as PreferredGender })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-rose-600 focus:outline-none transition-colors text-gray-800"
-                  >
-                    {PREF_GENDERS.map(gender => (
-                      <option key={gender} value={gender}>{gender}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Interested In *</label>
-                <select
-                  value={formData.looking_for}
-                  onChange={(e) => setFormData({ ...formData, looking_for: e.target.value as LookingFor })}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-rose-600 focus:outline-none transition-colors text-gray-800"
-                >
-                  {LOOKING_FOR_OPTIONS.map(option => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-              </div>
-
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">About Me *</label>
                 <textarea
@@ -644,14 +584,22 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Hobbies * (comma-separated)</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Hobbies * (max 3, comma-separated)</label>
                 <input
                   type="text"
                   value={formData.hobbies}
-                  onChange={(e) => setFormData({ ...formData, hobbies: e.target.value })}
+                  onChange={(e) => {
+                    const hobbies = e.target.value.split(',').map(h => h.trim()).filter(h => h);
+                    if (hobbies.length <= 3) {
+                      setFormData({ ...formData, hobbies: e.target.value });
+                    }
+                  }}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-rose-600 focus:outline-none transition-colors text-gray-800"
                   placeholder="e.g., Reading, Gaming, Music"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  {formData.hobbies.split(',').filter(h => h.trim()).length}/3 hobbies
+                </p>
               </div>
             </div>
 
@@ -780,6 +728,101 @@ export default function ProfilePage() {
       >
         {modal.message}
       </Modal>
+
+      {/* Help Modal */}
+      {showHelpModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-rose-600 to-red-500 text-white p-6 flex items-center justify-between sticky top-0">
+              <div className="flex items-center">
+                <HelpCircle className="w-7 h-7 mr-3" />
+                <h2 className="text-2xl font-black">Help & Support</h2>
+              </div>
+              <button
+                onClick={() => setShowHelpModal(false)}
+                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-6">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Need Help?</h3>
+                <p className="text-gray-600 mb-4">
+                  If you have any questions, concerns, or need assistance, feel free to reach out to us through any of the following channels:
+                </p>
+              </div>
+
+              {/* Email Support */}
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <div className="flex items-start gap-3">
+                  <div className="bg-rose-100 p-2 rounded-lg">
+                    <Mail className="w-5 h-5 text-rose-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-gray-900 mb-1">Email Support</h4>
+                    <a 
+                      href="mailto:uemanilausc.official@gmail.com"
+                      className="text-rose-600 hover:text-rose-700 underline break-all"
+                    >
+                      uemanilausc.official@gmail.com
+                    </a>
+                    <p className="text-sm text-gray-500 mt-2">Response Time: 24-48 hours</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Phone Contact */}
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <div className="flex items-start gap-3">
+                  <div className="bg-rose-100 p-2 rounded-lg">
+                    <Phone className="w-5 h-5 text-rose-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-gray-900 mb-1">Phone Support</h4>
+                    <a 
+                      href="tel:09665687430"
+                      className="text-rose-600 hover:text-rose-700 font-semibold text-lg"
+                    >
+                      09665687430
+                    </a>
+                    <p className="text-sm text-gray-500 mt-2">Available for immediate assistance</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Office Visit */}
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <div className="flex items-start gap-3">
+                  <div className="bg-rose-100 p-2 rounded-lg">
+                    <MapPin className="w-5 h-5 text-rose-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-gray-900 mb-1">Visit Us</h4>
+                    <p className="text-gray-700">USC Office</p>
+                    <p className="text-gray-600">Located at SFC Lobby</p>
+                    <p className="text-sm text-gray-500 mt-2">Walk-in for immediate response</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="bg-gray-50 p-4 border-t border-gray-200">
+              <button
+                onClick={() => setShowHelpModal(false)}
+                className="w-full bg-gradient-to-r from-rose-600 to-red-500 text-white font-bold py-3 rounded-xl hover:shadow-lg transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
