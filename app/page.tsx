@@ -40,6 +40,17 @@ export default function LoginPage() {
     }
   }, [searchParams]);
 
+  // Handle password recovery redirect
+  useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const type = hashParams.get('type');
+    
+    if (type === 'recovery') {
+      // Redirect to reset password page with the hash intact
+      router.push(`/auth/reset-password${window.location.hash}`);
+    }
+  }, [router]);
+
   // Resend cooldown timer
   useEffect(() => {
     if (resendCooldown > 0) {
