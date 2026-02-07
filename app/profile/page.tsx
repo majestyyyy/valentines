@@ -218,26 +218,6 @@ export default function ProfilePage() {
         return;
       }
 
-      // Check rate limit
-      const rateLimitResponse = await fetch('/api/rate-limit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          limiterType: 'profile',
-          identifier: userId 
-        })
-      });
-
-      const rateLimitData = await rateLimitResponse.json();
-
-      if (!rateLimitData.allowed) {
-        const resetDate = new Date(rateLimitData.reset);
-        showModal('error', 'Too Many Requests', 
-          `You can only update your profile 3 times per hour. Try again at ${resetDate.toLocaleTimeString()}.`);
-        setSaving(false);
-        return;
-      }
-
       // Upload new photos if they exist
       const photoUrls: string[] = [...existingPhotoUrls];
 
