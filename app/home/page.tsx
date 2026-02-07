@@ -386,8 +386,13 @@ export default function HomePage() {
       const [, { data: theirSwipe }] = await Promise.all([swipePromise, matchCheckPromise]);
       
       if (theirSwipe) {
-        // It's a match! Assign 3 random missions
-        const [mission1, mission2, mission3] = get3RandomMissions();
+        // It's a match! Determine relationship type for missions
+        // Use the looking_for preference - if they match, both should have the same preference
+        // If different, use the current user's preference as they're the one completing missions
+        const relationshipType = myProfile?.looking_for || 'Friendship';
+        
+        // Assign 3 random missions appropriate for the relationship type
+        const [mission1, mission2, mission3] = get3RandomMissions(relationshipType as any);
         await (supabase as any).from('matches').insert({
           user1_id: user.id,
           user2_id: currentProfile.id,

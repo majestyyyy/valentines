@@ -11,182 +11,382 @@ export interface Mission {
   difficulty: 'easy' | 'medium' | 'hard';
   emoji: string;
   category: 'booth' | 'campus' | 'food' | 'academic' | 'creative';
+  suitableFor: ('Romantic' | 'Friendship' | 'Study Buddy' | 'Networking')[]; // What relationship types this mission is suitable for
 }
 
 export const CAMPUS_MISSIONS: Mission[] = [
-  // Booth Missions (4)
+  // Booth Missions
   {
     id: 1,
     title: "Jail Booth Challenge",
-    description: "Visit the Jail Booth together and take a fun mugshot photo!",
+    description: "Puntahan together ang Jail Booth at kumuha ng fun mugshot photo!",
     location: "Jail Booth",
     difficulty: 'easy',
     emoji: '🚔',
-    category: 'booth'
+    category: 'booth',
+    suitableFor: ['Romantic', 'Friendship', 'Study Buddy', 'Networking']
   },
   {
     id: 2,
     title: "Marriage Booth Ceremony",
-    description: "Get 'married' at the Marriage Booth and take a wedding photo together!",
+    description: "Mag-pa'kasal' sa Marriage Booth at kumuha ng wedding photo together!",
     location: "Marriage Booth",
     difficulty: 'easy',
     emoji: '💍',
-    category: 'booth'
+    category: 'booth',
+    suitableFor: ['Romantic']
   },
   {
     id: 3,
     title: "Friendship Booth Memory",
-    description: "Make friendship bracelets or take a BFF photo at the Friendship Booth!",
+    description: "Gumawa ng friendship bracelets o mag-take ng BFF photo sa Friendship Booth!",
     location: "Friendship Booth",
     difficulty: 'easy',
     emoji: '🤝',
-    category: 'booth'
+    category: 'booth',
+    suitableFor: ['Friendship', 'Study Buddy', 'Networking', 'Romantic']
   },
   {
     id: 4,
     title: "Confession Booth Secret",
-    description: "Share a secret or confession at the Confession Booth and bond over honesty!",
+    description: "Mag-share ng secret or confession sa Confession Booth at mag-bond over honesty!",
     location: "Confession Booth",
     difficulty: 'medium',
     emoji: '🙏',
-    category: 'booth'
+    category: 'booth',
+    suitableFor: ['Romantic', 'Friendship']
   },
 
-  // Campus Missions (14)
+  // Campus Missions
   {
     id: 5,
-    title: "Library Study Session",
-    description: "Study together at the library for at least 30 minutes and share your favorite book!",
-    location: "UE Library",
-    difficulty: 'easy',
-    emoji: '📚',
-    category: 'academic'
-  },
-  {
-    id: 6,
     title: "SFC Lobby Selfie",
-    description: "Take a creative selfie at the SFC Lobby!",
+    description: "Kumuha ng creative selfie sa SFC Lobby!",
     location: "SFC Lobby",
     difficulty: 'easy',
     emoji: '🤳',
-    category: 'campus'
+    category: 'campus',
+    suitableFor: ['Romantic', 'Friendship', 'Study Buddy', 'Networking']
   },
   {
-    id: 7,
+    id: 6,
     title: "Canteen Food Challenge",
-    description: "Try 3 different food items from the canteen and rate them together!",
+    description: "Try 3 different food items sa canteen at i-rate nyo together!",
     location: "UE Canteen",
     difficulty: 'medium',
     emoji: '🍽️',
-    category: 'food'
+    category: 'food',
+    suitableFor: ['Romantic', 'Friendship', 'Study Buddy', 'Networking']
   },
   {
-    id: 8,
+    id: 7,
     title: "Campus Walk & Talk",
-    description: "Walk around the entire campus perimeter while having a deep conversation!",
+    description: "Mag-lakad around the entire campus perimeter habang nag-uusap ng malalim!",
     location: "UE Campus",
     difficulty: 'medium',
     emoji: '🚶',
-    category: 'campus'
+    category: 'campus',
+    suitableFor: ['Romantic', 'Friendship']
   },
   {
-    id: 9,
+    id: 8,
     title: "College Building Tour",
-    description: "Visit each other's college buildings and learn about your programs!",
+    description: "Puntahan ang college buildings nyo at alamin ang programs ninyo!",
     location: "Various Colleges",
     difficulty: 'medium',
     emoji: '🏫',
-    category: 'academic'
+    category: 'academic',
+    suitableFor: ['Study Buddy', 'Networking', 'Friendship', 'Romantic']
   },
   {
-    id: 10,
+    id: 9,
     title: "Gym Buddy Session",
-    description: "Work out together at the campus gym or do a quick exercise routine!",
+    description: "Mag-work out together sa campus gym o gumawa ng quick exercise routine!",
     location: "UE Gym",
     difficulty: 'medium',
     emoji: '💪',
-    category: 'campus'
+    category: 'campus',
+    suitableFor: ['Friendship', 'Romantic', 'Study Buddy']
   },
   {
-    id: 11,
+    id: 10,
     title: "Garden Picnic",
-    description: "Have a mini picnic at the campus garden or green space!",
+    description: "Mag-mini picnic sa campus garden or green space!",
     location: "Campus Garden",
     difficulty: 'easy',
     emoji: '🌳',
-    category: 'campus'
+    category: 'campus',
+    suitableFor: ['Romantic', 'Friendship']
   },
   {
-    id: 12,
-    title: "Art Wall Photo",
-    description: "Find the campus art wall or mural and create a creative photo together!",
-    location: "Art Wall",
-    difficulty: 'easy',
-    emoji: '🎨',
-    category: 'creative'
-  },
-  {
-    id: 13,
+    id: 11,
     title: "Coffee Shop Chat",
-    description: "Have coffee or drinks at the campus coffee shop and share life goals!",
+    description: "Mag-kape or drinks sa coffee shop at mag-share ng life goals!",
     location: "Campus Coffee Shop",
     difficulty: 'easy',
     emoji: '☕',
-    category: 'food'
+    category: 'food',
+    suitableFor: ['Romantic', 'Friendship', 'Networking', 'Study Buddy']
   },
   {
-    id: 14,
-    title: "Sports Court Game",
-    description: "Play a quick game (basketball, volleyball, etc.) at the sports court!",
-    location: "Sports Court",
-    difficulty: 'hard',
-    emoji: '🏀',
-    category: 'campus'
-  },
-  {
-    id: 15,
-    title: "Study Group Session",
-    description: "Form a mini study group and help each other with homework or projects!",
-    location: "Study Area",
-    difficulty: 'medium',
-    emoji: '✏️',
-    category: 'academic'
-  },
-  {
-    id: 16,
+    id: 12,
     title: "Campus Scavenger Hunt",
-    description: "Find 5 iconic UE landmarks together and take photos at each!",
+    description: "Hanapin ang 5 iconic UE landmarks together at mag-take ng photos sa each!",
     location: "Entire Campus",
     difficulty: 'hard',
     emoji: '🔍',
-    category: 'campus'
+    category: 'campus',
+    suitableFor: ['Romantic', 'Friendship', 'Study Buddy']
   },
   {
-    id: 17,
+    id: 13,
     title: "Create a TikTok/Reel",
-    description: "Make a fun TikTok or Instagram Reel together on campus!",
+    description: "Gumawa ng fun TikTok or Instagram Reel together sa campus!",
     location: "Anywhere on Campus",
     difficulty: 'medium',
     emoji: '🎥',
-    category: 'creative'
+    category: 'creative',
+    suitableFor: ['Romantic', 'Friendship', 'Networking']
   },
   {
-    id: 18,
+    id: 14,
     title: "Share Your Playlist",
-    description: "Exchange Spotify playlists and listen to each other's favorite songs together!",
+    description: "Mag-exchange ng Spotify playlists at pakinggan ang favorite songs nyo!",
     location: "Anywhere",
     difficulty: 'easy',
     emoji: '🎵',
-    category: 'creative'
+    category: 'creative',
+    suitableFor: ['Romantic', 'Friendship', 'Study Buddy']
   },
   {
-    id: 19,
+    id: 15,
     title: "Campus Sunset Watch",
-    description: "Watch the sunset together from the best view on campus!",
+    description: "Panoorin ang sunset together sa best view on campus!",
     location: "Campus Rooftop/View",
     difficulty: 'easy',
     emoji: '🌅',
-    category: 'campus'
+    category: 'campus',
+    suitableFor: ['Romantic', 'Friendship']
+  },
+  {
+    id: 16,
+    title: "Flash Mob Dance",
+    description: "Matuto ng simple dance routine at i-perform together sa public campus area!",
+    location: "Campus Plaza",
+    difficulty: 'hard',
+    emoji: '💃',
+    category: 'creative',
+    suitableFor: ['Romantic', 'Friendship']
+  },
+  {
+    id: 17,
+    title: "Book Exchange",
+    description: "Mag-exchange ng favorite books at pag-usapan kung bakit nyo gusto!",
+    location: "Library or Anywhere",
+    difficulty: 'easy',
+    emoji: '📖',
+    category: 'academic',
+    suitableFor: ['Study Buddy', 'Friendship', 'Networking', 'Romantic']
+  },
+  {
+    id: 18,
+    title: "Career Goals Workshop",
+    description: "I-share ang 5-year career plans nyo at mag-bigayan ng advice!",
+    location: "Study Area or Coffee Shop",
+    difficulty: 'medium',
+    emoji: '💼',
+    category: 'academic',
+    suitableFor: ['Networking', 'Study Buddy', 'Friendship']
+  },
+  {
+    id: 19,
+    title: "Campus History Tour",
+    description: "Mag-research at puntahan ang 3 historical spots sa campus at alamin ang stories nila!",
+    location: "Historical Campus Sites",
+    difficulty: 'medium',
+    emoji: '🏛️',
+    category: 'academic',
+    suitableFor: ['Study Buddy', 'Friendship', 'Networking', 'Romantic']
+  },
+  {
+    id: 20,
+    title: "Compliment Challenge",
+    description: "Bigyan ang isa't isa ng 5 genuine compliments in person!",
+    location: "Anywhere",
+    difficulty: 'easy',
+    emoji: '😊',
+    category: 'campus',
+    suitableFor: ['Romantic', 'Friendship']
+  },
+  {
+    id: 21,
+    title: "Photo Booth Marathon",
+    description: "Kumuha ng silly photos sa 3 different spots on campus with different themes!",
+    location: "Multiple Locations",
+    difficulty: 'medium',
+    emoji: '📸',
+    category: 'creative',
+    suitableFor: ['Romantic', 'Friendship', 'Study Buddy', 'Networking']
+  },
+  {
+    id: 22,
+    title: "Campus Radio Shoutout",
+    description: "Puntahan ang campus radio station at mag-dedicate ng kanta sa isa't isa!",
+    location: "Campus Radio Station",
+    difficulty: 'medium',
+    emoji: '📻',
+    category: 'creative',
+    suitableFor: ['Romantic', 'Friendship']
+  },
+  {
+    id: 23,
+    title: "Sketch Each Other",
+    description: "Subukan i-draw or i-sketch ang isa't isa - hindi kailangan magaling sa art!",
+    location: "Art Room or Garden",
+    difficulty: 'easy',
+    emoji: '✏️',
+    category: 'creative',
+    suitableFor: ['Romantic', 'Friendship', 'Study Buddy']
+  },
+  {
+    id: 24,
+    title: "Campus Mystery Box",
+    description: "Gumawa ng mystery gift boxes para sa isa't isa with items under ₱100!",
+    location: "Anywhere",
+    difficulty: 'medium',
+    emoji: '🎁',
+    category: 'campus',
+    suitableFor: ['Romantic', 'Friendship']
+  },
+  {
+    id: 25,
+    title: "Debate Challenge",
+    description: "Pumili ng fun topic at mag-debate ng friendly for 10 minutes!",
+    location: "Study Area",
+    difficulty: 'medium',
+    emoji: '⚖️',
+    category: 'academic',
+    suitableFor: ['Study Buddy', 'Networking', 'Friendship', 'Romantic']
+  },
+  {
+    id: 26,
+    title: "Campus Clean-Up",
+    description: "Mag-spend ng 30 minutes picking up litter together at gawing maganda ang campus!",
+    location: "Campus Grounds",
+    difficulty: 'medium',
+    emoji: '♻️',
+    category: 'campus',
+    suitableFor: ['Friendship', 'Study Buddy', 'Networking', 'Romantic']
+  },
+  {
+    id: 27,
+    title: "Origami Session",
+    description: "Matuto at gumawa ng origami together - at least 3 different designs!",
+    location: "Library or Study Area",
+    difficulty: 'easy',
+    emoji: '🦢',
+    category: 'creative',
+    suitableFor: ['Romantic', 'Friendship', 'Study Buddy']
+  },
+  {
+    id: 28,
+    title: "Campus Vlog Day",
+    description: "Gumawa ng day-in-the-life vlog together showcasing your campus experience!",
+    location: "Entire Campus",
+    difficulty: 'hard',
+    emoji: '🎬',
+    category: 'creative',
+    suitableFor: ['Romantic', 'Friendship', 'Networking']
+  },
+  {
+    id: 29,
+    title: "Time Capsule Creation",
+    description: "Gumawa ng digital or physical time capsule with memories to open in 1 year!",
+    location: "Anywhere",
+    difficulty: 'medium',
+    emoji: '⏰',
+    category: 'creative',
+    suitableFor: ['Romantic', 'Friendship']
+  },
+  {
+    id: 30,
+    title: "Campus Food Crawl",
+    description: "Tikman ang food from 3 different campus food stalls or vendors!",
+    location: "Campus Food Areas",
+    difficulty: 'hard',
+    emoji: '🍜',
+    category: 'food',
+    suitableFor: ['Romantic', 'Friendship', 'Study Buddy', 'Networking']
+  },
+  {
+    id: 31,
+    title: "Study Technique Exchange",
+    description: "I-share ang best study techniques at productivity hacks nyo!",
+    location: "Library or Study Area",
+    difficulty: 'easy',
+    emoji: '📝',
+    category: 'academic',
+    suitableFor: ['Study Buddy', 'Networking', 'Friendship']
+  },
+  {
+    id: 32,
+    title: "Campus Photography Walk",
+    description: "Kumuha ng 5 artistic photos around campus with different themes!",
+    location: "Entire Campus",
+    difficulty: 'medium',
+    emoji: '📷',
+    category: 'creative',
+    suitableFor: ['Romantic', 'Friendship', 'Study Buddy', 'Networking']
+  },
+  {
+    id: 33,
+    title: "Gratitude Circle",
+    description: "Mag-share ng 5 things na grateful kayo and bakit!",
+    location: "Quiet Campus Spot",
+    difficulty: 'easy',
+    emoji: '🙏',
+    category: 'campus',
+    suitableFor: ['Romantic', 'Friendship', 'Study Buddy']
+  },
+  {
+    id: 34,
+    title: "Campus Meme Creation",
+    description: "Gumawa ng 3 funny memes about campus life together!",
+    location: "Anywhere",
+    difficulty: 'easy',
+    emoji: '😂',
+    category: 'creative',
+    suitableFor: ['Friendship', 'Study Buddy', 'Networking', 'Romantic']
+  },
+  {
+    id: 35,
+    title: "Board Game Battle",
+    description: "Mag-laro ng board game or card game together sa Library!",
+    location: "PODCIT 4th floor",
+    difficulty: 'easy',
+    emoji: '🎲',
+    category: 'campus',
+    suitableFor: ['Romantic', 'Friendship', 'Study Buddy', 'Networking']
+  },
+  {
+    id: 36,
+    title: "Campus Podcast Episode",
+    description: "Mag-record ng short podcast episode together about your college experience!",
+    location: "Quiet Area",
+    difficulty: 'hard',
+    emoji: '🎙️',
+    category: 'creative',
+    suitableFor: ['Friendship', 'Networking', 'Romantic']
+  },
+  {
+    id: 37,
+    title: "Future Letter Exchange",
+    description: "Sumulat ng letters sa future selves nyo at mag-exchange para basahin in 6 months!",
+    location: "Anywhere",
+    difficulty: 'medium',
+    emoji: '✉️',
+    category: 'creative',
+    suitableFor: ['Romantic', 'Friendship']
   }
 ];
 
@@ -200,9 +400,16 @@ export function getRandomMission(): Mission {
 
 /**
  * Get 3 unique random missions for a new match
+ * Filters missions based on the relationship type (looking_for)
  */
-export function get3RandomMissions(): [Mission, Mission, Mission] {
-  const shuffled = [...CAMPUS_MISSIONS].sort(() => Math.random() - 0.5);
+export function get3RandomMissions(lookingFor: 'Romantic' | 'Friendship' | 'Study Buddy' | 'Networking'): [Mission, Mission, Mission] {
+  // Filter missions that are suitable for the relationship type
+  const suitableMissions = CAMPUS_MISSIONS.filter(mission => 
+    mission.suitableFor.includes(lookingFor)
+  );
+  
+  // Shuffle and return 3 random missions
+  const shuffled = [...suitableMissions].sort(() => Math.random() - 0.5);
   return [shuffled[0], shuffled[1], shuffled[2]];
 }
 
