@@ -17,6 +17,8 @@ export default function LoginPage() {
   const [message, setMessage] = useState('');
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [isResending, setIsResending] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -37,6 +39,16 @@ export default function LoginPage() {
       setMessage('Your account has been permanently banned. You cannot access this service.');
     }
   }, [searchParams]);
+
+  // Resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => {
+        setResendCooldown(resendCooldown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
 
   const handleTermsAccept = async () => {
     if (!pendingUserId) return;
@@ -276,6 +288,32 @@ export default function LoginPage() {
     }
   };
 
+  const handleResendCode = async () => {
+    if (resendCooldown > 0 || isResending) return;
+
+    setIsResending(true);
+    setMessage('');
+
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: false,
+        }
+      });
+
+      if (error) throw error;
+
+      setMessage('✅ Verification code resent! Check your email.');
+      setResendCooldown(60); // 60 second cooldown
+    } catch (err: any) {
+      console.error('Resend failed:', err);
+      setMessage(err.message || 'Failed to resend code. Please try again.');
+    } finally {
+      setIsResending(false);
+    }
+  };
+
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -459,10 +497,21 @@ export default function LoginPage() {
 
               <button
                 type="button"
+                onClick={handleResendCode}
+                disabled={resendCooldown > 0 || isResending}
+                className="w-full rounded-full border-2 border-rose-300 px-6 py-3 text-sm font-semibold text-rose-600 hover:bg-rose-50 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+              >
+                <Mail className="w-4 h-4" />
+                {isResending ? 'Sending...' : resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend code'}
+              </button>
+
+              <button
+                type="button"
                 onClick={() => {
                   setMode('login');
                   setOtp('');
                   setMessage('');
+                  setResendCooldown(0);
                 }}
                 className="w-full text-sm text-gray-500 hover:text-rose-600 transition-colors"
               >

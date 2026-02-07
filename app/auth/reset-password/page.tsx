@@ -11,17 +11,52 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [success, setSuccess] = useState(false);
+  const [isValidSession, setIsValidSession] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    // Check if this is a valid password reset link
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setMessage('Invalid or expired reset link. Please request a new one.');
+    // Handle the password recovery token from URL hash
+    const handleRecoveryToken = async () => {
+      try {
+        // Check if there's a hash in the URL (recovery token)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const type = hashParams.get('type');
+
+        if (type === 'recovery' && accessToken) {
+          // Exchange the token for a session
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: hashParams.get('refresh_token') || '',
+          });
+
+          if (error) {
+            console.error('Session error:', error);
+            setMessage('Invalid or expired reset link. Please request a new one.');
+            return;
+          }
+
+          if (data.session) {
+            setIsValidSession(true);
+            // Clear the hash from URL for security
+            window.history.replaceState(null, '', window.location.pathname);
+          }
+        } else {
+          // Check if there's already an active session
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            setIsValidSession(true);
+          } else {
+            setMessage('Invalid or expired reset link. Please request a new one.');
+          }
+        }
+      } catch (err) {
+        console.error('Recovery token error:', err);
+        setMessage('An error occurred. Please request a new reset link.');
       }
     };
-    checkSession();
+
+    handleRecoveryToken();
   }, []);
 
   const handleResetPassword = async (e: React.FormEvent) => {
@@ -77,7 +112,26 @@ export default function ResetPasswordPage() {
 
         {/* Reset Password Card */}
         <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-8 border-2 border-pink-200/50">
-          {success ? (
+          {!isValidSession && !success ? (
+            // Loading/Invalid Session Message
+            <div className="text-center space-y-6">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-red-100 rounded-full mb-4">
+                <Lock className="w-12 h-12 text-red-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800">Verifying Reset Link...</h2>
+              {message && (
+                <div className="p-4 rounded-xl text-sm font-medium bg-red-50 text-red-700 border border-red-200">
+                  {message}
+                </div>
+              )}
+              <button
+                onClick={() => router.push('/')}
+                className="w-full rounded-full bg-gradient-to-r from-pink-500 to-red-500 px-6 py-4 text-base font-bold text-white shadow-lg hover:shadow-xl focus:outline-none transition-all active:scale-95"
+              >
+                Back to Login
+              </button>
+            </div>
+          ) : success ? (
             // Success Message
             <div className="text-center space-y-6">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
