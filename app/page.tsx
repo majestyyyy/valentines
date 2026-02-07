@@ -156,7 +156,7 @@ export default function LoginPage() {
     setMessage('');
 
     if (!email.endsWith('@ue.edu.ph')) {
-      setMessage('Only @ue.edu.ph emails are allowed.');
+      setMessage('Only UE email is allowed.');
       setLoading(false);
       return;
     }
@@ -201,6 +201,7 @@ export default function LoginPage() {
       if (data.user) {
         setMessage('Verification code sent! Check your email to complete signup.');
         setMode('verify');
+        setResendCooldown(60);
       }
     } catch (err: any) {
       console.error('Signup failed:', err);
@@ -232,8 +233,9 @@ export default function LoginPage() {
 
       if (error) throw error;
 
-      setMessage('Check your email! We sent you a 6-digit code.');
+      setMessage('Check your email! We sent you a 8-digit code.');
       setMode('verify');
+      setResendCooldown(60);
     } catch (err: any) {
       setMessage(err.message || 'Failed to send OTP');
     } finally {
@@ -485,6 +487,16 @@ export default function LoginPage() {
                   maxLength={8}
                   required
                 />
+                <div className="mt-2 text-left">
+                  <button
+                    type="button"
+                    onClick={handleResendCode}
+                    disabled={resendCooldown > 0 || isResending}
+                    className="text-xs font-medium text-rose-600 hover:text-rose-700 hover:underline focus:outline-none disabled:text-gray-400 disabled:cursor-not-allowed disabled:no-underline transition-all"
+                  >
+                    {isResending ? 'Sending...' : resendCooldown > 0 ? `Resend OTP in (${resendCooldown}s)` : 'Resend OTP'}
+                  </button>
+                </div>
               </div>
 
               {message && (
@@ -503,17 +515,7 @@ export default function LoginPage() {
                 className="w-full rounded-full bg-gradient-to-r from-rose-600 to-red-500 px-6 py-4 text-base font-bold text-white shadow-lg hover:shadow-xl focus:outline-none disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
               >
                 <Key className="w-5 h-5" />
-                {loading ? 'Verifying...' : 'Verify & Continue'}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleResendCode}
-                disabled={resendCooldown > 0 || isResending}
-                className="w-full rounded-full border-2 border-rose-300 px-6 py-3 text-sm font-semibold text-rose-600 hover:bg-rose-50 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
-              >
-                <Mail className="w-4 h-4" />
-                {isResending ? 'Sending...' : resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend code'}
+                {loading ? 'Verifying...' : 'Verify'}
               </button>
 
               <button
@@ -755,15 +757,13 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-sm text-gray-500 mt-8">
-          By continuing, you agree to our{' '}
-          <a
-            href="/terms"
-            className="text-rose-600 hover:text-rose-700 underline font-semibold"
-          >
-            Terms of Service & Privacy Policy
-          </a>
-        </p>
+        <div className="text-center mt-8 space-y-3">        
+          
+          <div className="flex items-center justify-center gap-2 text-xs text-gray-400 pt-2 border-t border-gray-200">
+            <span>Powered by</span>
+            <span className="font-bold text-rose-600">UE Manila - University Student Council</span>
+          </div>
+        </div>
       </div>
 
       {/* Terms Modal */}

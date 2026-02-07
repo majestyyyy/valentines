@@ -628,7 +628,7 @@ function ProfileSetupContent() {
                 value={formData.year_level}
                 onChange={e => setFormData({...formData, year_level: parseInt(e.target.value)})}
               >
-                {[1, 2, 3, 4, 5].map(y => <option key={y} value={y}>{y}</option>)}
+                {[1, 2, 3, 4, 5, 6].map(y => <option key={y} value={y}>{y}</option>)}
               </select>
             </div>
           </div>

@@ -835,6 +835,7 @@ export default function HomePage() {
                              currentProfile.year_level === 3 ? '3rd Year' :
                              currentProfile.year_level === 4 ? '4th Year' :
                              currentProfile.year_level === 5 ? '5th Year' :
+                             currentProfile.year_level === 6 ? '6th Year' :
                              `${currentProfile.year_level}th Year`}
                           </span>
                         </>
