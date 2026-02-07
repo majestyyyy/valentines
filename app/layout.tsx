@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import MobileGuard from "@/components/MobileGuard";
 import BanGuard from "@/components/BanGuard";
 
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -42,6 +43,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-icon.png" />
       </head>
       <body className={inter.className}>
+      
         <MobileGuard>
           <BanGuard>
             {children}

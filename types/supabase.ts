@@ -23,7 +23,7 @@ export interface Database {
           preferred_gender: 'Male' | 'Female' | 'Non-binary' | null
           looking_for: 'Romantic' | 'Friendship' | 'Study Buddy' | 'Networking' | 'Everyone' | null
           role: 'admin' | 'user'
-          status: 'pending' | 'approved' | 'rejected'
+          status: 'incomplete' | 'pending' | 'approved' | 'rejected'
           terms_accepted_at: string | null
           created_at: string
         }
@@ -40,7 +40,7 @@ export interface Database {
           preferred_gender?: 'Male' | 'Female' | 'Non-binary' | null
           looking_for?: 'Romantic' | 'Friendship' | 'Study Buddy' | 'Networking' | 'Everyone' | null
           role?: 'admin' | 'user'
-          status?: 'pending' | 'approved' | 'rejected'
+          status?: 'incomplete' | 'pending' | 'approved' | 'rejected'
           terms_accepted_at?: string | null
           created_at?: string
         }
@@ -57,7 +57,7 @@ export interface Database {
           preferred_gender?: 'Male' | 'Female' | 'Non-binary' | null
           looking_for?: 'Romantic' | 'Friendship' | 'Study Buddy' | 'Networking' | 'Everyone' | null
           role?: 'admin' | 'user'
-          status?: 'pending' | 'approved' | 'rejected'
+          status?: 'incomplete' | 'pending' | 'approved' | 'rejected'
           terms_accepted_at?: string | null
           created_at?: string
         }
