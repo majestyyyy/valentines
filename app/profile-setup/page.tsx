@@ -362,7 +362,6 @@ function ProfileSetupContent() {
         hobbies: sanitizedHobbies,
         description: sanitizedDescription,
         gender: formData.gender,
-        preferred_gender: formData.preferred_gender,
         looking_for: formData.looking_for,
         photo_urls: uploadedUrls,
         status: 'pending', // Profile must be reviewed by admin before going public

@@ -308,7 +308,6 @@ export default function ProfilePage() {
         hobbies: sanitizedHobbies,
         description: sanitizedDescription,
         gender: formData.gender,
-        preferred_gender: formData.preferred_gender,
         looking_for: formData.looking_for,
         photo_urls: cleanedPhotoUrls,
         status: 'pending', // Require admin review
@@ -323,7 +322,6 @@ export default function ProfilePage() {
         updateData.approved_hobbies = currentProfile.hobbies;
         updateData.approved_description = currentProfile.description;
         updateData.approved_gender = currentProfile.gender;
-        updateData.approved_preferred_gender = currentProfile.preferred_gender;
       }
 
       const { error: updateError } = await (supabase as any)
