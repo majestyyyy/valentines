@@ -315,39 +315,13 @@ export default function HomePage() {
     // Use safe filter format for NOT IN
     const safeIds = `(${swiped.map((id: string) => `"${id}"`).join(',')})`;
 
+    // Show all approved profiles regardless of gender - fully inclusive matching
     let query = (supabase as any)
       .from('profiles')
       .select('*')
       .eq('status', 'approved')
-      .filter('id', 'not.in', safeIds);
-    
-    // Apply bidirectional gender matching
-    // Show profiles where BOTH conditions are true:
-    // 1. Their gender matches what I'm interested in (or I'm interested in Everyone)
-    // 2. I match what they're interested in (or they're interested in Everyone)
-    
-    if (myProfileData.preferred_gender && myProfileData.gender) {
-      // Build the mutual interest filter
-      // Show them if:
-      // - Their gender is what I want (or I want Everyone - legacy)
-      // AND
-      // - They want my gender (or they want Everyone - legacy)
-      
-      const myGender = myProfileData.gender;
-      const myPreference = myProfileData.preferred_gender;
-      
-      // They must match what I'm looking for
-      if (myPreference !== 'Male' && myPreference !== 'Female' && myPreference !== 'Non-binary') {
-        // I'm interested in everyone (legacy "Everyone" or "Other"), so no gender filter
-      } else {
-        query = query.eq('gender', myPreference);
-      }
-      
-      // And I must match what they're looking for
-      query = query.or(`preferred_gender.eq.${myGender},preferred_gender.eq.Everyone`);
-    }
-
-    query = query.limit(50); // Increased limit to show more candidates
+      .filter('id', 'not.in', safeIds)
+      .limit(50);
 
     const { data: candidates, error } = await query;
     

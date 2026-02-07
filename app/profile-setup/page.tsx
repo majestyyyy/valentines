@@ -68,7 +68,6 @@ function ProfileSetupContent() {
     hobbies: '',
     description: '',
     gender: 'Male' as Gender,
-    preferred_gender: 'Male' as PreferredGender,
     looking_for: 'Romantic' as LookingFor,
   });
 
@@ -164,7 +163,6 @@ function ProfileSetupContent() {
           hobbies: profile.hobbies?.join(', ') || '',
           description: profile.description || '',
           gender: profile.gender as Gender || 'Male',
-          preferred_gender: profile.preferred_gender as PreferredGender || 'Male',
           looking_for: profile.looking_for as LookingFor || 'Romantic',
         });
 
@@ -587,16 +585,6 @@ function ProfileSetupContent() {
               onChange={e => setFormData({...formData, gender: e.target.value as Gender})}
             >
               {GENDERS.map(g => <option key={g} value={g}>{g}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-bold mb-2 text-gray-700">Interested In</label>
-            <select 
-              className="w-full p-4 border-2 border-gray-200 rounded-xl bg-white focus:border-rose-600 focus:outline-none transition-colors"
-              value={formData.preferred_gender}
-              onChange={e => setFormData({...formData, preferred_gender: e.target.value as PreferredGender})}
-            >
-              {PREF_GENDERS.map(g => <option key={g} value={g}>{g}</option>)}
             </select>
           </div>
           <div>

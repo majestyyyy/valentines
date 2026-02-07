@@ -34,7 +34,6 @@ export default function ProfilePage() {
     hobbies: '',
     description: '',
     gender: 'Male' as Gender,
-    preferred_gender: 'Everyone' as PreferredGender,
     looking_for: 'Romantic' as LookingFor,
   });
 
@@ -110,7 +109,6 @@ export default function ProfilePage() {
         hobbies: profile.hobbies?.join(', ') || '',
         description: profile.description || '',
         gender: profile.gender as Gender || 'Male',
-        preferred_gender: profile.preferred_gender as PreferredGender || 'Everyone',
         looking_for: profile.looking_for as LookingFor || 'Romantic',
       });
 
@@ -467,13 +465,8 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-gray-500 uppercase mb-1">Looking For</h3>
-                  <p className="text-lg font-medium text-gray-800">{formData.preferred_gender}</p>
+                  <p className="text-lg font-medium text-gray-800">{formData.looking_for}</p>
                 </div>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-1">Interested In</h3>
-                <p className="text-lg font-medium text-gray-800">{formData.looking_for}</p>
               </div>
 
               <div>
