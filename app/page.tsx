@@ -678,8 +678,8 @@ export default function LoginPage() {
             // Login Form
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">Welcome Back! 👋</h2>
-                <p className="text-sm text-gray-500 mt-2">Log in to continue</p>
+                <h2 className="text-2xl font-bold text-gray-800">Hi, Warrior! 👋</h2>
+                <p className="text-sm text-gray-500 mt-2">Makakahabol ka pa sa Valentines! <br></br>Kaya log in na!</p>
               </div>
 
               <div>
