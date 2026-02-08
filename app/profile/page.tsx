@@ -255,6 +255,32 @@ export default function ProfilePage() {
         }
       }
 
+      // Cleanup: Delete any orphaned photos in user's folder that aren't in the new photoUrls
+      try {
+        const { data: allFiles } = await supabase.storage
+          .from('photos')
+          .list(userId);
+        
+        if (allFiles && allFiles.length > 0) {
+          const newFileNames = photoUrls
+            .filter(url => url)
+            .map(url => url.split('/').pop())
+            .filter(name => name);
+          
+          const filesToDelete = allFiles
+            .filter(file => !newFileNames.includes(file.name))
+            .map(file => `${userId}/${file.name}`);
+          
+          if (filesToDelete.length > 0) {
+            await supabase.storage.from('photos').remove(filesToDelete);
+            console.log(`🗑️ Cleaned up ${filesToDelete.length} orphaned photos`);
+          }
+        }
+      } catch (cleanupError) {
+        console.error('Error cleaning up orphaned photos:', cleanupError);
+        // Don't throw - this is just cleanup
+      }
+
       // Filter out empty strings
       const cleanedPhotoUrls = photoUrls.filter(url => url);
 
@@ -344,7 +370,23 @@ export default function ProfilePage() {
 
       if (files && files.length > 0) {
         const filePaths = files.map(file => `${userId}/${file.name}`);
-        await supabase.storage.from('photos').remove(filePaths);
+        const { error: storageError } = await supabase.storage
+          .from('photos')
+          .remove(filePaths);
+        
+        if (storageError) {
+          console.error('Error deleting storage files:', storageError);
+        }
+      }
+
+      // Also try to remove the user folder itself
+      try {
+        await supabase.storage
+          .from('photos')
+          .remove([`${userId}`]);
+      } catch (folderError) {
+        // Folder removal might fail if already empty, that's okay
+        console.log('Folder cleanup attempted');
       }
 
       // Delete user profile (this will cascade delete swipes, matches, notifications due to foreign keys)
@@ -353,16 +395,24 @@ export default function ProfilePage() {
         .delete()
         .eq('id', userId);
 
-      // Delete auth user account
-      const { error: deleteError } = await supabase.rpc('delete_user');
+      // Delete auth user account using the spam prevention function
+      const { data: deleteResult, error: deleteError } = await (supabase as any).rpc('delete_user_with_cooldown');
       
       if (deleteError) {
         console.error('Error deleting auth account:', deleteError);
+        // Try fallback to simple delete_user function
+        const { error: fallbackError } = await (supabase as any).rpc('delete_user');
+        if (fallbackError) {
+          throw fallbackError;
+        }
       }
 
       // Sign out and redirect
       await supabase.auth.signOut();
-      showModal('success', 'Account Deleted', 'Your account has been deleted successfully.');
+      
+      // Show success message with cooldown info if available
+      const message = (deleteResult as any)?.message || 'Your account has been deleted successfully.';
+      showModal('success', 'Account Deleted', message);
       setTimeout(() => router.push('/'), 2000);
     } catch (error) {
       console.error('Error deleting account:', error);
