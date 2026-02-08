@@ -2,7 +2,7 @@
 -- This ensures admin only sees profiles that are fully filled out with images
 
 -- Step 1: Add a new status type that includes 'incomplete'
--- First, create a new enum type with the additional status
+-- Run this first and separately
 DO $$ 
 BEGIN
     -- Check if incomplete is already added
@@ -14,6 +14,9 @@ BEGIN
         ALTER TYPE profile_status ADD VALUE 'incomplete';
     END IF;
 END $$;
+
+-- IMPORTANT: After running the above, wait a moment, then run the rest below
+-- This is required because PostgreSQL needs enum changes to be committed first
 
 -- Step 2: Update default status to 'incomplete' for new profiles
 ALTER TABLE profiles ALTER COLUMN status SET DEFAULT 'incomplete'::profile_status;
@@ -31,7 +34,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Step 4: Update existing incomplete profiles (profiles without nickname or photos) to 'incomplete' status
 UPDATE profiles 
 SET status = 'incomplete'
-WHERE status = 'pending' 
-  AND (nickname IS NULL OR photo_urls IS NULL OR array_length(photo_urls, 1) < 1);
+WHERE status IS NULL
+  OR (nickname IS NULL OR photo_urls IS NULL OR array_length(photo_urls, 1) < 1);
 
 COMMENT ON TYPE profile_status IS 'incomplete: profile not yet filled out, pending: awaiting admin approval, approved: active profile, rejected: needs changes, banned: permanently banned';

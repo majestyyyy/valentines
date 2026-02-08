@@ -174,14 +174,16 @@ export default function LoginPage() {
     }
 
     try {
-      // Check if user already exists
-      const { data: existingProfile } = await (supabase as any)
-        .from('profiles')
-        .select('email')
-        .eq('email', email.toLowerCase())
-        .single();
+      // Check if user already exists by attempting to sign in
+      const { data: signInCheck, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password: 'dummy-check-password' // This will fail if account exists but unverified
+      });
 
-      if (existingProfile) {
+      // If sign in succeeds or returns specific errors, user exists
+      if (signInCheck?.user || 
+          signInError?.message?.includes('Invalid login credentials') ||
+          signInError?.message?.includes('Email not confirmed')) {
         setMessage('This email is already registered. Please login instead.');
         setLoading(false);
         return;
@@ -196,7 +198,17 @@ export default function LoginPage() {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        // Handle duplicate email error
+        if (error.message.includes('User already registered') || 
+            error.message.includes('already been registered') ||
+            error.message.includes('duplicate')) {
+          setMessage('This email is already registered. Please login instead.');
+          setLoading(false);
+          return;
+        }
+        throw error;
+      }
 
       if (data.user) {
         setMessage('Verification code sent! Check your email to complete signup.');

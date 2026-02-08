@@ -43,19 +43,6 @@ export default function AdminDashboard() {
     const profilesChannel = supabase
       .channel('admin-profiles')
       .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'profiles',
-        filter: 'status=eq.pending'
-      }, (payload) => {
-        setPendingUsers(current => [...current, payload.new as Profile]);
-        // Update stats when new pending user arrives
-        setStats(prev => ({ 
-          ...prev, 
-          pendingApprovals: prev.pendingApprovals + 1 
-        }));
-      })
-      .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
         table: 'profiles'
@@ -63,20 +50,27 @@ export default function AdminDashboard() {
         const updated = payload.new as Profile;
         const old = payload.old as Profile;
         
-        // Remove from pending list if status changed
-        if (updated.status !== 'pending') {
+        // Add to pending list if status changed from incomplete/rejected to pending
+        if (updated.status === 'pending' && old.status !== 'pending') {
+          setPendingUsers(current => [...current, updated]);
+          setStats(prev => ({ 
+            ...prev, 
+            pendingApprovals: prev.pendingApprovals + 1 
+          }));
+        }
+        // Remove from pending list if status changed away from pending
+        else if (updated.status !== 'pending' && old.status === 'pending') {
           setPendingUsers(current => current.filter(u => u.id !== updated.id));
           
           // Update stats based on status change
-          if (old.status === 'pending') {
-            setStats(prev => ({ 
-              ...prev, 
-              pendingApprovals: Math.max(0, prev.pendingApprovals - 1),
-              totalUsers: updated.status === 'approved' ? prev.totalUsers + 1 : prev.totalUsers
-            }));
-          }
-        } else {
-          // Update existing pending user
+          setStats(prev => ({ 
+            ...prev, 
+            pendingApprovals: Math.max(0, prev.pendingApprovals - 1),
+            totalUsers: updated.status === 'approved' ? prev.totalUsers + 1 : prev.totalUsers
+          }));
+        }
+        // Update existing pending user data
+        else if (updated.status === 'pending') {
           setPendingUsers(current => 
             current.map(u => u.id === updated.id ? updated : u)
           );
@@ -601,7 +595,9 @@ export default function AdminDashboard() {
                   <div className="flex-1">
                     <h3 className="font-bold text-xl text-gray-800">{user.nickname}</h3>
                     <p className="text-sm text-gray-600 mt-1">{user.college} - Year {user.year_level}</p>
-                    <p className="text-xs text-gray-400 mt-1">{user.email}</p>
+                    <p className="text-xs text-gray-400 mt-1 truncate max-w-xs" title={user.email}>
+                      {user.email}
+                    </p>
                     <p className="text-xs text-gray-500 mt-2">
                       <span className="font-semibold">Gender:</span> {user.gender} • 
                       <span className="font-semibold ml-2">Prefers:</span> {user.preferred_gender}
