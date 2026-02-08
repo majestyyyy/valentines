@@ -356,33 +356,18 @@ export default function ChatRoom() {
     console.log('Original message:', messageContent);
     console.log('Sanitized message:', sanitizedMessage);
 
-    // Optimistically add message to UI
-    const tempMessage: Message = {
-      id: `temp-${Date.now()}`,
-      match_id: matchId as string,
-      sender_id: currentUserId,
-      content: sanitizedMessage,
-      created_at: new Date().toISOString()
-    };
-    
-    setMessages(prev => [...prev, tempMessage]);
-
-    // Send to database
-    const { data, error } = await (supabase as any).from('messages').insert({
+    // Send to database (real-time subscription will add it to UI)
+    const { error } = await (supabase as any).from('messages').insert({
       match_id: matchId as string,
       sender_id: currentUserId,
       content: sanitizedMessage
-    }).select().single();
+    });
 
     if (error) {
       console.error('Error sending message:', error);
-      // Remove temp message if send failed
-      setMessages(prev => prev.filter(m => m.id !== tempMessage.id));
-      alert('Failed to send message');
-    } else if (data) {
-      // Replace temp message with real message from database
-      setMessages(prev => prev.map(m => m.id === tempMessage.id ? data : m));
+      showModal('error', 'Message Failed', 'Failed to send message. Please try again.');
     }
+    // No need to manually add to messages - real-time subscription handles it
   };
   const submitReport = async () => {
     if (!reportReason.trim()) {

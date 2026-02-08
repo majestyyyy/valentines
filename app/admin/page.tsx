@@ -675,9 +675,16 @@ export default function AdminDashboard() {
                     <p className="text-xs text-gray-400 flex items-center gap-1 mb-2">
                       <span>📅</span> {new Date(report.created_at).toLocaleString()}
                     </p>
-                    <p className="font-bold text-gray-700 text-sm mb-1">Report Details:</p>
+                    <p className="font-bold text-gray-700 text-sm mb-1">Report Reason:</p>
                     <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 mb-3">
                       <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{report.reason}</p>
+                    </div>
+                    
+                    <p className="font-bold text-gray-700 text-sm mb-1 mt-3">Additional Details:</p>
+                    <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-4 mb-3">
+                      <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">
+                        {(report as any).details || 'No additional details provided'}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -971,6 +978,13 @@ export default function AdminDashboard() {
                   <p className="font-bold text-gray-700 text-sm mb-2">Report Reason:</p>
                   <div className="bg-white border-2 border-red-300 rounded-xl p-4 shadow-inner">
                     <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{selectedReport.reason}</p>
+                  </div>
+                  
+                  <p className="font-bold text-gray-700 text-sm mb-2 mt-3">Additional Details:</p>
+                  <div className="bg-white border-2 border-orange-300 rounded-xl p-4 shadow-inner">
+                    <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">
+                      {(selectedReport as any).details || 'No additional details provided'}
+                    </p>
                   </div>
                 </div>
               </div>

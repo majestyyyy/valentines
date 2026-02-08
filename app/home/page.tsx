@@ -45,6 +45,7 @@ export default function HomePage() {
   // Report modal state
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('');
+  const [reportDetails, setReportDetails] = useState('');
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
@@ -58,12 +59,13 @@ export default function HomePage() {
 
   const handleReportClick = () => {
     setReportReason('');
+    setReportDetails('');
     setShowReportModal(true);
   };
 
   const submitReport = async () => {
     if (!reportReason.trim()) {
-      showModal('warning', 'Missing Information', 'Please provide a reason for reporting this user.');
+      showModal('warning', 'Missing Information', 'Please select a reason for reporting this user.');
       return;
     }
 
@@ -97,13 +99,15 @@ export default function HomePage() {
         .insert({
           reporter_id: myProfile.id,
           reported_id: currentProfile.id,
-          reason: reportReason.trim()
+          reason: reportReason.trim(),
+          details: reportDetails.trim() || null
         } as any);
 
       if (error) throw error;
 
       setShowReportModal(false);
       setReportReason('');
+      setReportDetails('');
       showModal('success', 'Report Submitted', 'Thank you for your report. Our team will review it shortly.');
     } catch (error) {
       console.error('Error submitting report:', error);
@@ -124,9 +128,10 @@ export default function HomePage() {
 
     let currentUserId = myProfile.id;
 
-    // Subscribe to profile changes (new approved profiles or status updates)
+    // OPTIMIZED: Single consolidated channel for all real-time updates
     const channel = supabase
-      .channel('profiles-changes')
+      .channel(`user-updates-${currentUserId}`)
+      // Profile changes
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
@@ -134,16 +139,13 @@ export default function HomePage() {
       }, (payload) => {
         const newProfile = payload.new as Profile;
         
-        // Only add if approved, not me, and not already swiped
         if (
           newProfile.status === 'approved' && 
           newProfile.id !== currentUserId &&
           !swipedIds.includes(newProfile.id)
         ) {
-          console.log('New approved profile detected:', newProfile);
           setProfiles(prev => [...prev, newProfile]);
           
-          // If no current profile, set this as current
           if (!currentProfile) {
             setCurrentProfile(newProfile);
             setPhotoIndex(0);
@@ -157,59 +159,45 @@ export default function HomePage() {
       }, (payload) => {
         const updatedProfile = payload.new as Profile;
         
-        // If profile just got approved, add to candidates
         if (
           updatedProfile.status === 'approved' && 
           updatedProfile.id !== currentUserId &&
           !swipedIds.includes(updatedProfile.id)
         ) {
-          console.log('Profile approved in real-time:', updatedProfile);
-          
-          // Check if already in list
           setProfiles(prev => {
             const exists = prev.some(p => p.id === updatedProfile.id);
             if (exists) return prev;
             return [...prev, updatedProfile];
           });
           
-          // If no current profile, set this as current
           if (!currentProfile) {
             setCurrentProfile(updatedProfile);
             setPhotoIndex(0);
           }
         }
       })
-      .subscribe();
-
-    // Subscribe to new matches
-    const matchChannel = supabase
-      .channel('matches-updates')
+      // Match updates with filters to reduce unnecessary triggers
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
-        table: 'matches'
-      }, (payload) => {
-        const newMatch = payload.new as Database['public']['Tables']['matches']['Row'];
-        
-        // Update match count if this involves current user
-        if (newMatch.user1_id === currentUserId || newMatch.user2_id === currentUserId) {
-          fetchMatchCount();
-        }
-      })
-      .subscribe();
-
-    // Subscribe to new notifications (likes)
-    const notifChannel = supabase
-      .channel('notifications-updates')
+        table: 'matches',
+        filter: `user1_id=eq.${currentUserId}`
+      }, () => fetchMatchCount())
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
-        table: 'notifications'
+        table: 'matches',
+        filter: `user2_id=eq.${currentUserId}`
+      }, () => fetchMatchCount())
+      // Notification updates with filter
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${currentUserId}`
       }, (payload) => {
         const newNotif = payload.new as Database['public']['Tables']['notifications']['Row'];
-        
-        // Update unread count if this is for current user and is a like
-        if (newNotif.user_id === currentUserId && newNotif.type === 'like') {
+        if (newNotif.type === 'like') {
           fetchUnreadLikesCount();
         }
       })
@@ -217,8 +205,6 @@ export default function HomePage() {
 
     return () => {
       supabase.removeChannel(channel);
-      supabase.removeChannel(matchChannel);
-      supabase.removeChannel(notifChannel);
     };
   }, [myProfile, currentProfile, swipedIds]);
 
@@ -315,10 +301,10 @@ export default function HomePage() {
     // Use safe filter format for NOT IN
     const safeIds = `(${swiped.map((id: string) => `"${id}"`).join(',')})`;
 
-    // Show all approved profiles regardless of gender - fully inclusive matching
+    // OPTIMIZED: Select only needed columns, not all fields
     let query = (supabase as any)
       .from('profiles')
-      .select('*')
+      .select('id, nickname, photo_urls, college, year_level, description, gender, looking_for, hobbies')
       .eq('status', 'approved')
       .filter('id', 'not.in', safeIds)
       .limit(50);
@@ -928,14 +914,23 @@ export default function HomePage() {
 
       {/* Report Modal */}
       {showReportModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold text-gray-800">Report User</h3>
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-red-100 rounded-full">
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800">Report User</h3>
+                  <p className="text-xs text-gray-500">Help us keep yUE Match! safe</p>
+                </div>
+              </div>
               <button
                 onClick={() => {
                   setShowReportModal(false);
                   setReportReason('');
+                  setReportDetails('');
                 }}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
@@ -943,26 +938,52 @@ export default function HomePage() {
               </button>
             </div>
 
-            <p className="text-sm text-gray-600">
-              Please tell us why you're reporting this user. Our team will review your report.
-            </p>
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Reason *</label>
+                <select
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-ue-red focus:outline-none transition-colors"
+                >
+                  <option value="">Select a reason...</option>
+                  <option value="Harassment or bullying">Harassment or bullying</option>
+                  <option value="Inappropriate content">Inappropriate content</option>
+                  <option value="Spam or scam">Spam or scam</option>
+                  <option value="Fake profile">Fake profile</option>
+                  <option value="Threatening behavior">Threatening behavior</option>
+                  <option value="Offline behavior">Offline behavior concern</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
 
-            <textarea
-              value={reportReason}
-              onChange={(e) => setReportReason(e.target.value)}
-              placeholder="Describe the issue (e.g., inappropriate content, harassment, spam)..."
-              rows={4}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-ue-red focus:outline-none resize-none"
-              maxLength={500}
-            />
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Additional Details (Optional)</label>
+                <textarea
+                  value={reportDetails}
+                  onChange={(e) => setReportDetails(e.target.value)}
+                  placeholder="Provide any additional context..."
+                  className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-ue-red focus:outline-none transition-colors h-24 resize-none"
+                  maxLength={500}
+                />
+                <div className="text-xs text-gray-400 text-right mt-1">
+                  {reportDetails.length}/500
+                </div>
+              </div>
 
-            <div className="text-xs text-gray-400 text-right">
-              {reportReason.length}/500
+              <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
+                <p className="text-xs text-yellow-800">
+                  <strong>Note:</strong> Reports are reviewed by our admin team within 24-48 hours. False reports may result in account suspension.
+                </p>
+              </div>
             </div>
 
             <div className="flex gap-3">
               <button
                 onClick={() => {
+                  setShowReportModal(false);
+                  setReportReason('');
+                  setReportDetails
                   setShowReportModal(false);
                   setReportReason('');
                 }}
