@@ -156,97 +156,23 @@ export default function LoginPage() {
       return;
     }
 
-    if (password !== confirmPassword) {
-      setMessage('Passwords do not match.');
-      setLoading(false);
-      return;
-    }
-
-    if (password.length < 6) {
-      setMessage('Password must be at least 6 characters.');
-      setLoading(false);
-      return;
-    }
-
     try {
-      // Sign up with email and password (auto-confirm, no OTP needed)
-      const { data, error } = await supabase.auth.signUp({
+      // Send OTP to email
+      const { error } = await supabase.auth.signInWithOtp({
         email,
-        password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-          data: {
-            email_confirmed: true
-          }
+          shouldCreateUser: true,
         }
       });
 
-      if (error) {
-        // Handle duplicate email error
-        if (error.message.includes('User already registered') || 
-            error.message.includes('already been registered') ||
-            error.message.includes('duplicate')) {
-          setMessage('This email is already registered. Please login instead.');
-          setLoading(false);
-          return;
-        }
-        throw error;
-      }
+      if (error) throw error;
 
-      // Check if user was created
-      if (data.user) {
-        // If no session, try to sign in immediately (auto-confirm scenario)
-        if (!data.session) {
-          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
-
-          if (signInError) {
-            setMessage('Account created! Please try logging in.');
-            setMode('login');
-            setLoading(false);
-            return;
-          }
-
-          // Update data with sign-in session
-          if (signInData.session) {
-            data.session = signInData.session;
-          }
-        }
-
-        // Now proceed with profile check
-        const { data: profile } = await (supabase as any)
-          .from('profiles')
-          .select('status, nickname, photo_urls, is_banned, terms_accepted_at')
-          .eq('id', data.user.id)
-          .single();
-
-        // Check if banned
-        if (profile?.is_banned) {
-          await supabase.auth.signOut();
-          setMessage('Your account has been permanently banned.');
-          setLoading(false);
-          return;
-        }
-
-        // Navigate based on profile status
-        if (!profile || !profile.nickname || !profile.photo_urls || profile.photo_urls.length === 0) {
-          if (!profile?.terms_accepted_at) {
-            setPendingUserId(data.user.id);
-            setShowTermsModal(true);
-          } else {
-            router.push('/profile-setup');
-          }
-        } else if (profile.status === 'pending') {
-          router.push('/profile-setup/pending');
-        } else if (profile.status === 'approved') {
-          router.push('/home');
-        }
-      }
+      setMessage('Check your email! We sent you an 8-digit code.');
+      setMode('verify');
+      setResendCooldown(60);
     } catch (err: any) {
       console.error('Signup failed:', err);
-      setMessage(err.message || 'Failed to create account');
+      setMessage(err.message || 'Failed to send verification code');
     } finally {
       setLoading(false);
     }
