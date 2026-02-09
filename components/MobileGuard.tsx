@@ -57,7 +57,7 @@ export default function MobileGuard({ children }: { children: React.ReactNode })
   }, []);
 
   // Allow desktop access for admin routes and terms page
-  const isAdminRoute = pathname?.startsWith('/admin');
+  const isAdminRoute = pathname?.startsWith('/abcde');
   const isTermsPage = pathname === '/terms';
 
   // Desktop Landing Page

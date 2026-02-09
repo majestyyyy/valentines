@@ -11,7 +11,7 @@ export default function SessionGuard({ children }: { children: React.ReactNode }
       
       if (user) {
         // Check if user is admin (checking current route)
-        const isAdmin = window.location.pathname.startsWith('/admin');
+        const isAdmin = window.location.pathname.startsWith('/abcde');
         
         // Initialize session tracking
         await initializeSessionTracking(isAdmin);
@@ -31,7 +31,7 @@ export default function SessionGuard({ children }: { children: React.ReactNode }
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        const isAdmin = window.location.pathname.startsWith('/admin');
+        const isAdmin = window.location.pathname.startsWith('/abcde');
         await initializeSessionTracking(isAdmin);
       } else if (event === 'SIGNED_OUT') {
         localStorage.removeItem('session_metadata');

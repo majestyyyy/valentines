@@ -46,7 +46,7 @@ export default function AdminAuth() {
           return;
         }
 
-        router.push('/admin');
+        router.push('/abcde');
       }
     } catch (err: any) {
       setMessage(err.message || 'Invalid email or password');

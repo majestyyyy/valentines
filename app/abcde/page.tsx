@@ -217,7 +217,7 @@ export default function AdminDashboard() {
   const checkAdmin = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      router.push('/admin/login');
+      router.push('/abcde/login');
       return;
     }
     
@@ -233,7 +233,7 @@ export default function AdminDashboard() {
     if (profile?.role === 'admin') {
       setIsAdmin(true);
     } else {
-      router.push('/admin/login');
+      router.push('/abcde/login');
     }
     
     setLoading(false);
@@ -242,7 +242,7 @@ export default function AdminDashboard() {
   const handleLogout = async () => {
     if (confirm('Are you sure you want to log out?')) {
       await endSession(true); // Log admin logout
-      router.push('/admin/login');
+      router.push('/abcde/login');
     }
   };
 
