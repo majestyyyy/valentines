@@ -288,15 +288,6 @@ export default function HomePage() {
     setSwipedIds(swiped); // Store in state for real-time filtering
 
     // Build query
-    console.log('Fetching candidates for:', userId);
-    console.log('My profile:', myProfileData);
-    
-    // DEBUG: Check total approved profiles
-    const { count } = await (supabase as any)
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'approved');
-    console.log('Total approved profiles in DB:', count);
 
     // Use safe filter format for NOT IN
     const safeIds = `(${swiped.map((id: string) => `"${id}"`).join(',')})`;
@@ -311,17 +302,20 @@ export default function HomePage() {
 
     const { data: candidates, error } = await query;
     
+    // Randomize the order to prevent alphabetical sorting
+    if (candidates && candidates.length > 0) {
+      candidates.sort(() => Math.random() - 0.5);
+    }
+    
     if (error) {
         console.error('Error fetching candidates:', error);
     }
-    console.log('Candidates found:', candidates?.length, candidates);
 
     if (candidates && candidates.length > 0) {
       setProfiles(candidates);
       setCurrentProfile(candidates[0]); // SET THE FIRST PROFILE!
       setPhotoIndex(0);
     } else {
-      console.log('No candidates found matching criteria.');
       setProfiles([]);
       setCurrentProfile(null);
     }
