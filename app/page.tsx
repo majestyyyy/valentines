@@ -101,13 +101,6 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        // Check if email is verified
-        if (!data.user.email_confirmed_at) {
-          setMessage('Please verify your email first. Check your inbox for the verification code.');
-          setMode('verify');
-          return;
-        }
-
         // Check if user has a profile with complete data
         const { data: profile } = await (supabase as any)
           .from('profiles')
@@ -155,8 +148,10 @@ export default function LoginPage() {
     setLoading(true);
     setMessage('');
 
-    if (!email.endsWith('@ue.edu.ph')) {
-      setMessage('Only UE email is allowed.');
+    // Strict UE email validation with regex
+    const ueEmailRegex = /^[A-Za-z0-9._%+-]+@ue\.edu\.ph$/;
+    if (!ueEmailRegex.test(email.trim())) {
+      setMessage('Only valid @ue.edu.ph email addresses are allowed.');
       setLoading(false);
       return;
     }
@@ -174,12 +169,15 @@ export default function LoginPage() {
     }
 
     try {
-      // Sign up with email and password
+      // Sign up with email and password (auto-confirm, no OTP needed)
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: {
+            email_confirmed: true
+          }
         }
       });
 
@@ -195,10 +193,56 @@ export default function LoginPage() {
         throw error;
       }
 
+      // Check if user was created
       if (data.user) {
-        setMessage('Verification code sent! Check your email to complete signup.');
-        setMode('verify');
-        setResendCooldown(60);
+        // If no session, try to sign in immediately (auto-confirm scenario)
+        if (!data.session) {
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+          if (signInError) {
+            setMessage('Account created! Please try logging in.');
+            setMode('login');
+            setLoading(false);
+            return;
+          }
+
+          // Update data with sign-in session
+          if (signInData.session) {
+            data.session = signInData.session;
+          }
+        }
+
+        // Now proceed with profile check
+        const { data: profile } = await (supabase as any)
+          .from('profiles')
+          .select('status, nickname, photo_urls, is_banned, terms_accepted_at')
+          .eq('id', data.user.id)
+          .single();
+
+        // Check if banned
+        if (profile?.is_banned) {
+          await supabase.auth.signOut();
+          setMessage('Your account has been permanently banned.');
+          setLoading(false);
+          return;
+        }
+
+        // Navigate based on profile status
+        if (!profile || !profile.nickname || !profile.photo_urls || profile.photo_urls.length === 0) {
+          if (!profile?.terms_accepted_at) {
+            setPendingUserId(data.user.id);
+            setShowTermsModal(true);
+          } else {
+            router.push('/profile-setup');
+          }
+        } else if (profile.status === 'pending') {
+          router.push('/profile-setup/pending');
+        } else if (profile.status === 'approved') {
+          router.push('/home');
+        }
       }
     } catch (err: any) {
       console.error('Signup failed:', err);
