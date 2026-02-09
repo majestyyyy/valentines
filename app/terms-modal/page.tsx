@@ -33,14 +33,27 @@ export default function TermsModalPage() {
       // Check if user already accepted terms
       const { data: profile } = await (supabase as any)
         .from('profiles')
-        .select('terms_accepted_at')
+        .select('terms_accepted_at, status, nickname, photo_urls')
         .eq('id', session.user.id)
         .single();
 
       if (profile && profile.terms_accepted_at) {
-        // Already accepted, go to profile setup
-        router.push('/profile-setup');
-        return;
+        // Terms already accepted - check profile status
+        if (profile.status === 'approved') {
+          router.push('/home');
+          return;
+        } else if (profile.status === 'pending') {
+          router.push('/profile-setup/pending');
+          return;
+        } else if (!profile.nickname || !profile.photo_urls || profile.photo_urls.length === 0) {
+          // Profile incomplete
+          router.push('/profile-setup');
+          return;
+        } else {
+          // Has profile but not approved yet
+          router.push('/profile-setup/pending');
+          return;
+        }
       }
 
       setUserId(session.user.id);
