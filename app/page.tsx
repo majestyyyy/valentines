@@ -174,21 +174,6 @@ export default function LoginPage() {
     }
 
     try {
-      // Check if user already exists by attempting to sign in
-      const { data: signInCheck, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password: 'dummy-check-password' // This will fail if account exists but unverified
-      });
-
-      // If sign in succeeds or returns specific errors, user exists
-      if (signInCheck?.user || 
-          signInError?.message?.includes('Invalid login credentials') ||
-          signInError?.message?.includes('Email not confirmed')) {
-        setMessage('This email is already registered. Please login instead.');
-        setLoading(false);
-        return;
-      }
-
       // Sign up with email and password
       const { data, error } = await supabase.auth.signUp({
         email,
