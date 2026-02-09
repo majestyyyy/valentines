@@ -37,6 +37,8 @@ export default function LoginPage() {
     const error = searchParams.get('error');
     if (error === 'banned') {
       setMessage('Your account has been permanently banned. You cannot access this service.');
+    } else if (error === 'invalid-email') {
+      setMessage('Only @ue.edu.ph email addresses are allowed. Please sign in with your UE Gmail account.');
     }
   }, [searchParams]);
 
@@ -106,10 +108,9 @@ export default function LoginPage() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/terms-acceptance`,
+          redirectTo: `${window.location.origin}/terms-modal`,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent',
             hd: 'ue.edu.ph' // Restrict to UE email domain
           }
         }
@@ -135,10 +136,9 @@ export default function LoginPage() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/terms-acceptance`,
+          redirectTo: `${window.location.origin}/terms-modal`,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent',
             hd: 'ue.edu.ph' // Restrict to UE email domain
           }
         }
