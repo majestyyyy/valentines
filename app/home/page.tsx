@@ -763,15 +763,17 @@ export default function HomePage() {
                 <button 
                   className="w-1/2 h-full focus:outline-none active:bg-black/5" 
                   onClick={() => {
+                    if (!currentProfile.photo_urls || currentProfile.photo_urls.length <= 1) return;
                     setImageLoaded(false);
-                    setPhotoIndex(prev => Math.max(0, prev - 1));
+                    setPhotoIndex(prev => prev === 0 ? (currentProfile.photo_urls?.length || 1) - 1 : prev - 1);
                   }} 
                 />
                 <button 
                   className="w-1/2 h-full focus:outline-none active:bg-black/5" 
                   onClick={() => {
+                    if (!currentProfile.photo_urls || currentProfile.photo_urls.length <= 1) return;
                     setImageLoaded(false);
-                    setPhotoIndex(prev => Math.min((currentProfile.photo_urls?.length || 1) - 1, prev + 1));
+                    setPhotoIndex(prev => prev >= (currentProfile.photo_urls?.length || 1) - 1 ? 0 : prev + 1);
                   }} 
                 />
               </div>
