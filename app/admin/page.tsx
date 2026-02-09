@@ -7,7 +7,6 @@ import { endSession } from '@/lib/sessionSecurity';
 import { Database } from '@/types/supabase';
 import { useRouter } from 'next/navigation';
 import { LogOut, User } from 'lucide-react';
-import EmailLimitDashboard from '@/components/EmailLimitDashboard';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type Report = Database['public']['Tables']['reports']['Row'];
@@ -44,6 +43,19 @@ export default function AdminDashboard() {
     const profilesChannel = supabase
       .channel('admin-profiles')
       .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'profiles',
+        filter: 'status=eq.pending'
+      }, (payload) => {
+        setPendingUsers(current => [...current, payload.new as Profile]);
+        // Update stats when new pending user arrives
+        setStats(prev => ({ 
+          ...prev, 
+          pendingApprovals: prev.pendingApprovals + 1 
+        }));
+      })
+      .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
         table: 'profiles'
@@ -51,27 +63,20 @@ export default function AdminDashboard() {
         const updated = payload.new as Profile;
         const old = payload.old as Profile;
         
-        // Add to pending list if status changed from incomplete/rejected to pending
-        if (updated.status === 'pending' && old.status !== 'pending') {
-          setPendingUsers(current => [...current, updated]);
-          setStats(prev => ({ 
-            ...prev, 
-            pendingApprovals: prev.pendingApprovals + 1 
-          }));
-        }
-        // Remove from pending list if status changed away from pending
-        else if (updated.status !== 'pending' && old.status === 'pending') {
+        // Remove from pending list if status changed
+        if (updated.status !== 'pending') {
           setPendingUsers(current => current.filter(u => u.id !== updated.id));
           
           // Update stats based on status change
-          setStats(prev => ({ 
-            ...prev, 
-            pendingApprovals: Math.max(0, prev.pendingApprovals - 1),
-            totalUsers: updated.status === 'approved' ? prev.totalUsers + 1 : prev.totalUsers
-          }));
-        }
-        // Update existing pending user data
-        else if (updated.status === 'pending') {
+          if (old.status === 'pending') {
+            setStats(prev => ({ 
+              ...prev, 
+              pendingApprovals: Math.max(0, prev.pendingApprovals - 1),
+              totalUsers: updated.status === 'approved' ? prev.totalUsers + 1 : prev.totalUsers
+            }));
+          }
+        } else {
+          // Update existing pending user
           setPendingUsers(current => 
             current.map(u => u.id === updated.id ? updated : u)
           );
@@ -492,7 +497,7 @@ export default function AdminDashboard() {
 
       {/* Statistics Cards */}
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-3xl p-6 text-white shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 cursor-pointer">
             <div className="flex items-start justify-between mb-2">
               <div className="text-4xl">👥</div>
@@ -520,11 +525,6 @@ export default function AdminDashboard() {
               <div className="text-4xl font-black">{stats.openReports}</div>
             </div>
             <div className="text-sm font-semibold opacity-90">Open Reports</div>
-          </div>
-          
-          {/* Email Limit Dashboard */}
-          <div className="col-span-2 lg:col-span-1">
-            <EmailLimitDashboard />
           </div>
         </div>
       </div>
@@ -601,9 +601,7 @@ export default function AdminDashboard() {
                   <div className="flex-1">
                     <h3 className="font-bold text-xl text-gray-800">{user.nickname}</h3>
                     <p className="text-sm text-gray-600 mt-1">{user.college} - Year {user.year_level}</p>
-                    <p className="text-xs text-gray-400 mt-1 truncate max-w-xs" title={user.email}>
-                      {user.email}
-                    </p>
+                    <p className="text-xs text-gray-400 mt-1">{user.email}</p>
                     <p className="text-xs text-gray-500 mt-2">
                       <span className="font-semibold">Gender:</span> {user.gender} • 
                       <span className="font-semibold ml-2">Prefers:</span> {user.preferred_gender}

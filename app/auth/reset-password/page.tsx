@@ -18,37 +18,16 @@ export default function ResetPasswordPage() {
     // Handle the password recovery token from URL hash
     const handleRecoveryToken = async () => {
       try {
-        // Get hash from URL (Supabase uses hash for recovery tokens)
-        const hash = window.location.hash;
-        
-        if (!hash) {
-          // No hash, check if there's already an active session
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
-            // Check if this is a recovery session
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user && user.recovery_sent_at) {
-              setIsValidSession(true);
-              return;
-            }
-          }
-          setMessage('Invalid or expired reset link. Please request a new one.');
-          return;
-        }
-
-        // Parse hash parameters
-        const hashParams = new URLSearchParams(hash.substring(1));
+        // Check if there's a hash in the URL (recovery token)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = hashParams.get('access_token');
-        const refreshToken = hashParams.get('refresh_token');
         const type = hashParams.get('type');
-
-        console.log('Recovery URL detected:', { type, hasAccessToken: !!accessToken });
 
         if (type === 'recovery' && accessToken) {
           // Exchange the token for a session
           const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
-            refresh_token: refreshToken || '',
+            refresh_token: hashParams.get('refresh_token') || '',
           });
 
           if (error) {
@@ -58,15 +37,18 @@ export default function ResetPasswordPage() {
           }
 
           if (data.session) {
-            console.log('Recovery session established successfully');
             setIsValidSession(true);
             // Clear the hash from URL for security
             window.history.replaceState(null, '', window.location.pathname);
-          } else {
-            setMessage('Failed to establish session. Please request a new reset link.');
           }
         } else {
-          setMessage('Invalid reset link format. Please request a new one.');
+          // Check if there's already an active session
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            setIsValidSession(true);
+          } else {
+            setMessage('Invalid or expired reset link. Please request a new one.');
+          }
         }
       } catch (err) {
         console.error('Recovery token error:', err);
