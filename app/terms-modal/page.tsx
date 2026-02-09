@@ -31,13 +31,13 @@ export default function TermsModalPage() {
       }
 
       // Check if user already accepted terms
-      const { data: profile } = await supabase
+      const { data: profile } = await (supabase as any)
         .from('profiles')
         .select('terms_accepted_at')
         .eq('id', session.user.id)
         .single();
 
-      if (profile?.terms_accepted_at) {
+      if (profile && profile.terms_accepted_at) {
         // Already accepted, go to profile setup
         router.push('/profile-setup');
         return;
@@ -55,7 +55,7 @@ export default function TermsModalPage() {
     if (!userId) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('profiles')
         .update({
           terms_accepted_at: new Date().toISOString(),
