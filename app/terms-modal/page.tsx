@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import TermsModal from '@/components/TermsModal';
 import { Heart } from 'lucide-react';
+import { hashEmail } from '@/lib/hashEmail';
 
 export default function TermsModalPage() {
   const router = useRouter();
@@ -33,9 +34,18 @@ export default function TermsModalPage() {
       // Check if user already accepted terms
       const { data: profile } = await (supabase as any)
         .from('profiles')
-        .select('terms_accepted_at, status, nickname, photo_urls')
+        .select('terms_accepted_at, status, nickname, photo_urls, email')
         .eq('id', session.user.id)
         .single();
+
+      // Hash existing plaintext emails
+      if (profile && profile.email && profile.email.includes('@')) {
+        const emailHash = await hashEmail(profile.email);
+        await (supabase as any)
+          .from('profiles')
+          .update({ email: emailHash })
+          .eq('id', session.user.id);
+      }
 
       if (profile && profile.terms_accepted_at) {
         // Terms already accepted - check profile status

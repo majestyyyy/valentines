@@ -22,6 +22,23 @@ export default function HomePage() {
   const [matchCount, setMatchCount] = useState(0);
   const [swipedIds, setSwipedIds] = useState<string[]>([]);
   const [unreadLikesCount, setUnreadLikesCount] = useState(0);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  
+  // Preload next profile's images
+  useEffect(() => {
+    if (profiles.length > 0 && currentProfile) {
+      const currentIndex = profiles.findIndex(p => p.id === currentProfile.id);
+      const nextProfile = profiles[currentIndex + 1];
+      
+      if (nextProfile?.photo_urls) {
+        // Preload first image of next profile
+        nextProfile.photo_urls.forEach((url) => {
+          const img = new Image();
+          img.src = url;
+        });
+      }
+    }
+  }, [currentProfile, profiles]);
   
   // Swipe gesture state
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
@@ -315,6 +332,7 @@ export default function HomePage() {
       setProfiles(candidates);
       setCurrentProfile(candidates[0]); // SET THE FIRST PROFILE!
       setPhotoIndex(0);
+      setImageLoaded(false);
     } else {
       setProfiles([]);
       setCurrentProfile(null);
@@ -744,22 +762,41 @@ export default function HomePage() {
               <div className="absolute inset-0 z-10 flex">
                 <button 
                   className="w-1/2 h-full focus:outline-none active:bg-black/5" 
-                  onClick={() => setPhotoIndex(prev => Math.max(0, prev - 1))} 
+                  onClick={() => {
+                    setImageLoaded(false);
+                    setPhotoIndex(prev => Math.max(0, prev - 1));
+                  }} 
                 />
                 <button 
                   className="w-1/2 h-full focus:outline-none active:bg-black/5" 
-                  onClick={() => setPhotoIndex(prev => Math.min((currentProfile.photo_urls?.length || 1) - 1, prev + 1))} 
+                  onClick={() => {
+                    setImageLoaded(false);
+                    setPhotoIndex(prev => Math.min((currentProfile.photo_urls?.length || 1) - 1, prev + 1));
+                  }} 
                 />
               </div>
 
               {/* Photo */}
               <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300">
                 {currentProfile.photo_urls?.[photoIndex] ? (
-                  <img 
-                    src={currentProfile.photo_urls[photoIndex]} 
-                    alt={currentProfile.nickname || 'Profile'} 
-                    className="w-full h-full object-cover"
-                  />
+                  <>
+                    {!imageLoaded && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gray-300">
+                        <div className="animate-pulse text-gray-400">
+                          <Heart className="w-16 h-16 opacity-30" />
+                        </div>
+                      </div>
+                    )}
+                    <img 
+                      src={currentProfile.photo_urls[photoIndex]} 
+                      alt={currentProfile.nickname || 'Profile'} 
+                      className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                      loading="eager"
+                      decoding="async"
+                      onLoad={() => setImageLoaded(true)}
+                      onError={() => setImageLoaded(true)}
+                    />
+                  </>
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
                     <Heart className="w-20 h-20 mb-2 opacity-20" />
