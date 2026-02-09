@@ -1,6 +1,7 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { hashEmail } from '@/lib/hashEmail';
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
@@ -24,17 +25,20 @@ export async function GET(request: Request) {
       // Try to get or create profile
       let { data: profile, error: fetchError } = await supabase
         .from('profiles')
-        .select('status, is_banned, terms_accepted_at, nickname, photo_urls')
+        .select('status, is_banned, terms_accepted_at, nickname, photo_urls, email')
         .eq('id', session.user.id)
         .single();
 
       // If no profile exists, create one
       if (fetchError && fetchError.code === 'PGRST116') {
+        // Hash the email for privacy
+        const emailHash = await hashEmail(session.user.email!);
+        
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
           .insert({
             id: session.user.id,
-            email: session.user.email,
+            email: emailHash,
             status: 'incomplete'
           })
           .select()
@@ -46,6 +50,13 @@ export async function GET(request: Request) {
         }
 
         profile = newProfile;
+      } else if (profile && profile.email && profile.email.includes('@')) {
+        // Hash existing plaintext emails (migration for existing users)
+        const emailHash = await hashEmail(profile.email);
+        await supabase
+          .from('profiles')
+          .update({ email: emailHash })
+          .eq('id', session.user.id);
       }
 
       // CRITICAL: Check if user is banned first
