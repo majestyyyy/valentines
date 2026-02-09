@@ -5,6 +5,14 @@ import { NextResponse } from 'next/server';
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
+  const type = requestUrl.searchParams.get('type');
+
+  // Check if this is a password recovery link
+  if (type === 'recovery') {
+    // For password recovery, redirect to reset password page with the hash params
+    const hash = requestUrl.hash;
+    return NextResponse.redirect(`${requestUrl.origin}/auth/reset-password${hash}`);
+  }
 
   if (code) {
     const cookieStore = cookies();

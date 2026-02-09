@@ -8,9 +8,11 @@ import { supabase } from '@/lib/supabase';
 export default function TermsAcceptancePage() {
   const router = useRouter();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const [showDisclaimerModal, setShowDisclaimerModal] = useState(false);
   const [acknowledgeResponsibility, setAcknowledgeResponsibility] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
+  const [agreedToRules, setAgreedToRules] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,46 +43,11 @@ export default function TermsAcceptancePage() {
     checkAuth();
   }, [router]);
 
-  // Check scroll position periodically and on mount
-  useEffect(() => {
-    const checkScroll = () => {
-      if (!scrollContainerRef.current) return;
-      const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
-      const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-      if (distanceFromBottom < 100 && !hasScrolledToBottom) {
-        setHasScrolledToBottom(true);
-      }
-    };
-
-    // Check immediately
-    checkScroll();
-
-    // Also set up an interval to check periodically
-    const interval = setInterval(checkScroll, 500);
-    
-    return () => clearInterval(interval);
-  }, [hasScrolledToBottom]);
-
-  // Track scroll position
-  const handleScroll = () => {
-    if (!scrollContainerRef.current) return;
-
-    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
-    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-    
-    // Consider scrolled to bottom if within 100px of the bottom
-    const scrolledToBottom = distanceFromBottom < 100;
-
-    console.log('Scroll info:', { scrollTop, scrollHeight, clientHeight, distanceFromBottom, scrolledToBottom });
-
-    if (scrolledToBottom && !hasScrolledToBottom) {
-      setHasScrolledToBottom(true);
-    }
-  };
+  const allTermsAgreed = agreedToTerms && agreedToPrivacy && agreedToRules;
 
   const handleContinue = () => {
-    if (!hasScrolledToBottom) {
-      alert('Please scroll to the bottom to read all terms and conditions.');
+    if (!allTermsAgreed) {
+      alert('Please check all boxes to agree to the Terms, Privacy Policy, and Rules & Regulations.');
       return;
     }
     setShowDisclaimerModal(true);
@@ -160,7 +127,6 @@ export default function TermsAcceptancePage() {
           {/* Scrollable Content */}
           <div
             ref={scrollContainerRef}
-            onScroll={handleScroll}
             className="h-[60vh] overflow-y-scroll p-8 prose prose-sm max-w-none"
           >
             <div className="space-y-6">
@@ -186,7 +152,7 @@ export default function TermsAcceptancePage() {
                   We collect and process your personal information including:
                 </p>
                 <ul className="list-disc pl-6 text-gray-700 space-y-2">
-                  <li><strong>Account Information:</strong> Email address, password (encrypted)</li>
+                  <li><strong>Account Information:</strong> Email address, password of yUE Match! account (encrypted)</li>
                   <li><strong>Profile Data:</strong> Nickname, gender, college, year level, photos, bio, hobbies</li>
                   <li><strong>Usage Data:</strong> Swipe history, match records, chat messages, profile views</li>
                 </ul>
@@ -260,18 +226,46 @@ export default function TermsAcceptancePage() {
                 </p>
               </section>
 
-              {/* Scroll indicator */}
-              {!hasScrolledToBottom && (
-                <div className="text-center py-4 animate-bounce">
-                  <p className="text-rose-600 font-semibold">↓ Scroll down to continue ↓</p>
-                </div>
-              )}
+              {/* Agreement Checkboxes */}
+              <div className="border-t-2 border-gray-300 pt-6 space-y-4 not-prose">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Please confirm you have read and agree to:</h3>
+                
+                <label className="flex items-start space-x-3 cursor-pointer bg-gray-50 p-4 rounded-lg border-2 border-gray-200 hover:border-rose-300 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    className="mt-1 w-5 h-5 text-rose-600 rounded focus:ring-rose-500"
+                  />
+                  <span className="text-gray-800 font-medium">
+                    I have read and agree to the <strong>Terms of Service</strong> (Sections 1, 2, 6, 7, 8)
+                  </span>
+                </label>
 
-              {hasScrolledToBottom && (
-                <div className="text-center py-4">
-                  <p className="text-green-600 font-semibold">✓ You have reached the end</p>
-                </div>
-              )}
+                <label className="flex items-start space-x-3 cursor-pointer bg-gray-50 p-4 rounded-lg border-2 border-gray-200 hover:border-rose-300 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={agreedToPrivacy}
+                    onChange={(e) => setAgreedToPrivacy(e.target.checked)}
+                    className="mt-1 w-5 h-5 text-rose-600 rounded focus:ring-rose-500"
+                  />
+                  <span className="text-gray-800 font-medium">
+                    I have read and agree to the <strong>Privacy Policy</strong> and data collection practices (Section 3)
+                  </span>
+                </label>
+
+                <label className="flex items-start space-x-3 cursor-pointer bg-red-50 p-4 rounded-lg border-2 border-red-300 hover:border-red-400 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={agreedToRules}
+                    onChange={(e) => setAgreedToRules(e.target.checked)}
+                    className="mt-1 w-5 h-5 text-rose-600 rounded focus:ring-rose-500"
+                  />
+                  <span className="text-gray-800 font-medium">
+                    I have read and agree to the <strong>Rules & Regulations</strong>, including prohibited conduct and disclaimers (Sections 4, 5)
+                  </span>
+                </label>
+              </div>
             </div>
           </div>
 
@@ -279,15 +273,15 @@ export default function TermsAcceptancePage() {
           <div className="bg-gray-50 p-6 border-t border-gray-200">
             <div className="flex flex-col items-center space-y-4">
               <p className="text-sm text-gray-600 text-center">
-                {hasScrolledToBottom 
+                {allTermsAgreed 
                   ? 'You may now proceed to accept the terms' 
-                  : 'Please scroll to the bottom to read all terms and conditions'}
+                  : 'Please check all boxes to continue'}
               </p>
               <button
                 onClick={handleContinue}
-                disabled={!hasScrolledToBottom}
+                disabled={!allTermsAgreed}
                 className={`px-8 py-3 rounded-xl font-bold text-white transition-all ${
-                  hasScrolledToBottom
+                  allTermsAgreed
                     ? 'bg-gradient-to-r from-rose-600 to-red-500 hover:shadow-lg hover:scale-105'
                     : 'bg-gray-300 cursor-not-allowed'
                 }`}

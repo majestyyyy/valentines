@@ -7,6 +7,7 @@ import { endSession } from '@/lib/sessionSecurity';
 import { Database } from '@/types/supabase';
 import { useRouter } from 'next/navigation';
 import { LogOut, User } from 'lucide-react';
+import EmailLimitDashboard from '@/components/EmailLimitDashboard';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type Report = Database['public']['Tables']['reports']['Row'];
@@ -491,7 +492,7 @@ export default function AdminDashboard() {
 
       {/* Statistics Cards */}
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-3xl p-6 text-white shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 cursor-pointer">
             <div className="flex items-start justify-between mb-2">
               <div className="text-4xl">👥</div>
@@ -519,6 +520,11 @@ export default function AdminDashboard() {
               <div className="text-4xl font-black">{stats.openReports}</div>
             </div>
             <div className="text-sm font-semibold opacity-90">Open Reports</div>
+          </div>
+          
+          {/* Email Limit Dashboard */}
+          <div className="col-span-2 lg:col-span-1">
+            <EmailLimitDashboard />
           </div>
         </div>
       </div>

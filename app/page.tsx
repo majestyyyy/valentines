@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { trackEmailSent, checkRateLimit } from '@/lib/emailRateLimit';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Heart, Mail, Key, Lock, Smartphone, Monitor } from 'lucide-react';
 import TermsModal from '@/components/TermsModal';
@@ -65,6 +66,16 @@ export default function LoginPage() {
     if (!pendingUserId) return;
 
     try {
+      // Ensure we have an active session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        setMessage('Session expired. Please sign in again.');
+        setShowTermsModal(false);
+        setPendingUserId(null);
+        return;
+      }
+
       const { error } = await (supabase as any)
         .from('profiles')
         .update({
@@ -72,14 +83,17 @@ export default function LoginPage() {
         })
         .eq('id', pendingUserId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Profile update error:', error);
+        throw error;
+      }
 
       setShowTermsModal(false);
       setPendingUserId(null);
       router.push('/profile-setup');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error accepting terms:', error);
-      setMessage('Failed to save your acceptance. Please try again.');
+      setMessage(error.message || 'Failed to save your acceptance. Please try again.');
     }
   };
 
@@ -157,6 +171,20 @@ export default function LoginPage() {
     }
 
     try {
+      // Check rate limit before sending
+      const rateLimit = await checkRateLimit(500);
+      
+      if (!rateLimit.canSend) {
+        setMessage(`⚠️ Email service limit reached (${rateLimit.count}/500). Resets at: ${rateLimit.resetTime}`);
+        setLoading(false);
+        return;
+      }
+
+      // Warn if approaching limit
+      if (rateLimit.percentUsed >= 80) {
+        console.warn(`⚠️ Email limit warning: ${rateLimit.count}/500 used (${rateLimit.percentUsed.toFixed(1)}%)`);
+      }
+
       // Send OTP to email
       const { error } = await supabase.auth.signInWithOtp({
         email,
@@ -164,6 +192,19 @@ export default function LoginPage() {
           shouldCreateUser: true,
         }
       });
+
+      if (error) {
+        // Track failed attempt
+        await trackEmailSent('otp', email, false);
+        throw error;
+      }
+
+      // Track successful send
+      await trackEmailSent('otp', email, true);
+
+      setMessage('Check your email! We sent you an 8-digit code.');
+      setMode('verify');
+      setResendCooldown(60);
 
       if (error) throw error;
 
@@ -275,6 +316,15 @@ export default function LoginPage() {
     setMessage('');
 
     try {
+      // Check rate limit before resending
+      const rateLimit = await checkRateLimit(500);
+      
+      if (!rateLimit.canSend) {
+        setMessage(`⚠️ Email limit reached. Resets at: ${rateLimit.resetTime}`);
+        setIsResending(false);
+        return;
+      }
+
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
@@ -282,7 +332,13 @@ export default function LoginPage() {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        await trackEmailSent('otp', email, false);
+        throw error;
+      }
+
+      // Track successful resend
+      await trackEmailSent('otp', email, true);
 
       setMessage('✅ Verification code resent! Check your email.');
       setResendCooldown(60); // 60 second cooldown
