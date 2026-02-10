@@ -22,6 +22,42 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Check if user is already logged in and redirect
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        // User is already logged in, check their profile status
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('status, is_banned, terms_accepted_at, nickname, photo_urls')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profile?.is_banned) {
+          // If banned, sign them out
+          await supabase.auth.signOut();
+          setMessage('Your account has been banned.');
+          return;
+        }
+
+        // Redirect based on profile status
+        if (!profile?.terms_accepted_at) {
+          router.push('/terms-modal');
+        } else if (profile.status === 'approved') {
+          router.push('/home');
+        } else if (profile.status === 'pending') {
+          router.push('/profile-setup/pending');
+        } else if (!profile.nickname || !profile.photo_urls || profile.photo_urls.length === 0) {
+          router.push('/profile-setup');
+        }
+      }
+    };
+
+    checkExistingSession();
+  }, [router]);
+
   // Check if mobile device
   useEffect(() => {
     const checkMobile = () => {

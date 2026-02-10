@@ -195,6 +195,22 @@ export default function ChatRoom() {
     fetchMessages();
     setupMission();
 
+    // Mark message notifications as read for this match
+    const markNotificationsRead = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', user.id)
+        .eq('match_id', matchId)
+        .eq('type', 'message')
+        .eq('is_read', false);
+    };
+
+    markNotificationsRead();
+
     // 4. Subscribe to real-time updates
     const channel = supabase
       .channel(`match:${matchId}`)

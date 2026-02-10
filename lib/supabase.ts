@@ -11,6 +11,8 @@ let supabaseAdminInstance: SupabaseClient<Database> | null = null
 export const supabase = supabaseInstance || (supabaseInstance = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
     storageKey: 'sb-auth-token',
   }
 }))
