@@ -70,7 +70,13 @@ export default function ChatList() {
             .single();
           
           if (partner) {
-            setMatches(current => [...current, { ...newMatch, partner }]);
+            setMatches(current => {
+              // Prevent duplicates
+              if (current.some(m => m.id === newMatch.id)) {
+                return current;
+              }
+              return [...current, { ...newMatch, partner }];
+            });
           }
         }
       })
