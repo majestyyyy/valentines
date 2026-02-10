@@ -22,7 +22,6 @@ export default function HomePage() {
   const [matchCount, setMatchCount] = useState(0);
   const [swipedIds, setSwipedIds] = useState<string[]>([]);
   const [unreadLikesCount, setUnreadLikesCount] = useState(0);
-  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(false);
   
   // Preload next profile's images
@@ -217,8 +216,6 @@ export default function HomePage() {
         const newNotif = payload.new as Database['public']['Tables']['notifications']['Row'];
         if (newNotif.type === 'like') {
           fetchUnreadLikesCount();
-        } else if (newNotif.type === 'message') {
-          fetchUnreadMessagesCount();
         }
       })
       .subscribe();
@@ -293,20 +290,6 @@ export default function HomePage() {
       .eq('is_read', false);
 
     setUnreadLikesCount(notifications?.length || 0);
-  };
-
-  const fetchUnreadMessagesCount = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data: notifications } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('type', 'message')
-      .eq('is_read', false);
-
-    setUnreadMessagesCount(notifications?.length || 0);
   };
 
   const fetchCandidates = async (userId: string, myProfileData: Profile) => {
@@ -702,13 +685,8 @@ export default function HomePage() {
               </span>
             )}
           </Link>
-          <Link href="/chat" className="relative p-2 hover:bg-white/20 rounded-full transition-colors group">
+          <Link href="/chat" className="p-2 hover:bg-white/20 rounded-full transition-colors group">
             <MessageCircle className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
-            {unreadMessagesCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg animate-pulse">
-                {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
-              </span>
-            )}
           </Link>
           <Link href="/profile" className="p-2 hover:bg-white/20 rounded-full transition-colors group">
             <User className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
