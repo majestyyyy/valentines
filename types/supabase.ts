@@ -25,6 +25,7 @@ export interface Database {
           role: 'admin' | 'user'
           status: 'incomplete' | 'pending' | 'approved' | 'rejected'
           terms_accepted_at: string | null
+          is_banned: boolean | null
           created_at: string
         }
         Insert: {
@@ -42,6 +43,7 @@ export interface Database {
           role?: 'admin' | 'user'
           status?: 'incomplete' | 'pending' | 'approved' | 'rejected'
           terms_accepted_at?: string | null
+          is_banned?: boolean | null
           created_at?: string
         }
         Update: {
@@ -59,6 +61,7 @@ export interface Database {
           role?: 'admin' | 'user'
           status?: 'incomplete' | 'pending' | 'approved' | 'rejected'
           terms_accepted_at?: string | null
+          is_banned?: boolean | null
           created_at?: string
         }
       }
@@ -156,25 +159,31 @@ export interface Database {
           id: string
           user_id: string
           from_user_id: string
-          type: 'like' | 'match'
+          type: 'like' | 'match' | 'message'
           is_read: boolean
           created_at: string
+          message_id?: string | null
+          match_id?: string | null
         }
         Insert: {
           id?: string
           user_id: string
           from_user_id: string
-          type: 'like' | 'match'
+          type: 'like' | 'match' | 'message'
           is_read?: boolean
           created_at?: string
+          message_id?: string | null
+          match_id?: string | null
         }
         Update: {
           id?: string
           user_id?: string
           from_user_id?: string
-          type?: 'like' | 'match'
+          type?: 'like' | 'match' | 'message'
           is_read?: boolean
           created_at?: string
+          message_id?: string | null
+          match_id?: string | null
         }
       }
     }

@@ -200,7 +200,7 @@ export default function ChatRoom() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      await supabase
+      await (supabase as any)
         .from('notifications')
         .update({ is_read: true })
         .eq('user_id', user.id)

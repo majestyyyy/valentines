@@ -29,7 +29,7 @@ export default function LoginPage() {
       
       if (session?.user) {
         // User is already logged in, check their profile status
-        const { data: profile } = await supabase
+        const { data: profile } = await (supabase as any)
           .from('profiles')
           .select('status, is_banned, terms_accepted_at, nickname, photo_urls')
           .eq('id', session.user.id)
