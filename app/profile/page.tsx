@@ -96,25 +96,25 @@ export default function ProfilePage() {
       }
 
       // Check if user is banned - sign out immediately
-      if (profile.is_banned === true) {
+      if ((profile as any).is_banned === true) {
         await supabase.auth.signOut();
         router.push('/');
         return;
       }
 
       setFormData({
-        nickname: profile.nickname || '',
-        college: profile.college || 'CCSS',
-        year_level: profile.year_level || 1,
-        hobbies: profile.hobbies?.join(', ') || '',
-        description: profile.description || '',
-        gender: profile.gender as Gender || 'Male',
-        looking_for: profile.looking_for as LookingFor || 'Romantic',
+        nickname: (profile as any).nickname || '',
+        college: (profile as any).college || 'CCSS',
+        year_level: (profile as any).year_level || 1,
+        hobbies: (profile as any).hobbies?.join(', ') || '',
+        description: (profile as any).description || '',
+        gender: (profile as any).gender as Gender || 'Male',
+        looking_for: (profile as any).looking_for as LookingFor || 'Romantic',
       });
 
-      if (profile.photo_urls) {
-        setExistingPhotoUrls(profile.photo_urls);
-        setPreviews(profile.photo_urls.slice(0, 2).concat([null, null]).slice(0, 2));
+      if ((profile as any).photo_urls) {
+        setExistingPhotoUrls((profile as any).photo_urls);
+        setPreviews((profile as any).photo_urls.slice(0, 2).concat([null, null]).slice(0, 2));
       }
     } catch (error) {
       console.error('Error loading profile:', error);
@@ -335,7 +335,7 @@ export default function ProfilePage() {
       if (!user) throw new Error('Not authenticated');
 
       // SECURITY FIX: Use authenticated user ID, not state variable
-      const { error: updateError } = await supabase
+      const { error: updateError } = await (supabase as any)
         .from('profiles')
         .update(updateData)
         .eq('id', user.id);

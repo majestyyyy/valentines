@@ -41,7 +41,7 @@ export default function TermsModalPage() {
       // Hash existing plaintext emails
       if (profile && profile.email && profile.email.includes('@')) {
         const emailHash = await hashEmail(profile.email);
-        await supabase
+        await (supabase as any)
           .from('profiles')
           .update({ email: emailHash })
           .eq('id', session.user.id);
@@ -83,7 +83,7 @@ export default function TermsModalPage() {
       if (!session) throw new Error('Not authenticated');
 
       // SECURITY FIX: Use session user ID, not state variable
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('profiles')
         .update({
           terms_accepted_at: new Date().toISOString(),

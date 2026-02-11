@@ -2,16 +2,20 @@ import { supabase } from './supabase';
 import { createClient } from '@supabase/supabase-js';
 
 // Admin client with elevated permissions for audit logging
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-);
+// SECURITY: Only use service role key on server-side (not NEXT_PUBLIC_)
+// If service role key is not available, audit logging will be disabled
+const supabaseAdmin = process.env.SUPABASE_SERVICE_ROLE_KEY 
+  ? createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    )
+  : null;
 
 /**
  * Event types for audit logging
@@ -52,6 +56,12 @@ export interface AuditLogEntry {
  */
 export async function logAuditEvent(entry: AuditLogEntry): Promise<void> {
   try {
+    // Skip if no admin client available
+    if (!supabaseAdmin) {
+      console.warn('Audit logging disabled: No service role key configured');
+      return;
+    }
+
     const { error } = await supabaseAdmin
       .from('audit_logs')
       .insert({
@@ -176,6 +186,11 @@ export async function logUnauthorizedAccess(
  * Get recent audit logs (admin only)
  */
 export async function getAuditLogs(limit: number = 100) {
+  if (!supabaseAdmin) {
+    console.warn('Audit logging disabled: No service role key configured');
+    return [];
+  }
+
   const { data, error } = await supabaseAdmin
     .from('audit_logs')
     .select(`
@@ -198,6 +213,11 @@ export async function getAuditLogs(limit: number = 100) {
  * Get audit logs for a specific user
  */
 export async function getUserAuditLogs(userId: string, limit: number = 50) {
+  if (!supabaseAdmin) {
+    console.warn('Audit logging disabled: No service role key configured');
+    return [];
+  }
+
   const { data, error } = await supabaseAdmin
     .from('audit_logs')
     .select(`
@@ -224,6 +244,11 @@ export async function getAuditLogsByType(
   eventType: AuditEventType,
   limit: number = 100
 ) {
+  if (!supabaseAdmin) {
+    console.warn('Audit logging disabled: No service role key configured');
+    return [];
+  }
+
   const { data, error } = await supabaseAdmin
     .from('audit_logs')
     .select(`
