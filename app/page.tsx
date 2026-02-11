@@ -114,7 +114,7 @@ export default function LoginPage() {
       }
 
       // SECURITY FIX: Use authenticated session user ID, not state variable
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('profiles')
         .update({
           terms_accepted_at: new Date().toISOString(),

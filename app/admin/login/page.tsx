@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase, supabaseAdmin } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { Shield, Key } from 'lucide-react';
 import type { Database } from '@/types/supabase';
@@ -33,11 +33,11 @@ export default function AdminAuth() {
 
       if (data.user) {
         // Check if user has admin role
-        const { data: profile } = await (supabaseAdmin as any)
+        const { data: profile } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', data.user.id)
-          .single();
+          .single() as { data: { role: string } | null };
 
         if (!profile || profile.role !== 'admin') {
           await supabase.auth.signOut();

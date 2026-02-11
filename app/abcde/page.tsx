@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase, supabaseAdmin } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { logAdminAction, logUserBan, getAuditLogs } from '@/lib/auditLog';
 import { endSession } from '@/lib/sessionSecurity';
 import { Database } from '@/types/supabase';
@@ -189,8 +189,8 @@ export default function AdminDashboard() {
     };
   }, [activeTab, auditLogs.length]);
   const fetchStats = async () => {
-    const { data: users } = await (supabaseAdmin as any).from('profiles').select('status', { count: 'exact' });
-    const { data: matches, count: matchCount } = await (supabaseAdmin as any).from('matches').select('*', { count: 'exact', head: true });
+    const { data: users } = await (supabase as any).from('profiles').select('status', { count: 'exact' });
+    const { data: matches, count: matchCount } = await (supabase as any).from('matches').select('*', { count: 'exact', head: true });
     
     const pending = users?.filter((u: any) => u.status === 'pending').length || 0;
     const approved = users?.filter((u: any) => u.status === 'approved').length || 0;
@@ -221,8 +221,8 @@ export default function AdminDashboard() {
       return;
     }
     
-    // Use supabaseAdmin to bypass RLS and get profile
-    const { data: profile } = await (supabaseAdmin as any)
+    // Check admin role via RLS policy
+    const { data: profile } = await (supabase as any)
        .from('profiles')
        .select('role, email')
        .eq('id', user.id)
@@ -247,7 +247,7 @@ export default function AdminDashboard() {
   };
 
   const fetchPendingUsers = async () => {
-    const { data } = await (supabaseAdmin as any)
+    const { data } = await (supabase as any)
       .from('profiles')
       .select('*')
       .eq('status', 'pending');
@@ -257,12 +257,12 @@ export default function AdminDashboard() {
   };
 
   const fetchReports = async () => {
-    const { data: reportData } = await (supabaseAdmin as any).from('reports').select('*');
+    const { data: reportData } = await (supabase as any).from('reports').select('*');
     
     if (reportData && reportData.length > 0) {
         const enriched = await Promise.all(reportData.map(async (r: any) => {
-            const { data: reporter } = await (supabaseAdmin as any).from('profiles').select('*').eq('id', r.reporter_id).single();
-            const { data: reported } = await (supabaseAdmin as any).from('profiles').select('*').eq('id', r.reported_id).single();
+            const { data: reporter } = await (supabase as any).from('profiles').select('*').eq('id', r.reporter_id).single();
+            const { data: reported } = await (supabase as any).from('profiles').select('*').eq('id', r.reported_id).single();
             return {
                 ...r,
                 reporter: reporter!,
@@ -284,7 +284,7 @@ export default function AdminDashboard() {
       const adminId = user?.id;
 
       // Update profile status (do NOT set is_banned for rejections - allows re-editing)
-      await (supabaseAdmin as any).from('profiles').update({ status }).eq('id', userId);
+      await (supabase as any).from('profiles').update({ status }).eq('id', userId);
 
       // Log the admin action
       if (adminId) {
@@ -317,7 +317,7 @@ export default function AdminDashboard() {
 
       // 1. Ban the user FIRST (set is_banned and status to rejected)
       // This ensures they get kicked out immediately via BanGuard
-      const { error: banError } = await (supabaseAdmin as any)
+      const { error: banError } = await (supabase as any)
         .from('profiles')
         .update({ status: 'rejected', is_banned: true })
         .eq('id', userId);
@@ -330,7 +330,7 @@ export default function AdminDashboard() {
       console.log('User banned successfully');
 
       // 2. Delete all matches involving this user
-      const { error: matchError } = await (supabaseAdmin as any)
+      const { error: matchError } = await (supabase as any)
         .from('matches')
         .delete()
         .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
@@ -342,7 +342,7 @@ export default function AdminDashboard() {
       }
 
       // 3. Delete all swipes by and to this user
-      const { error: swipesError } = await (supabaseAdmin as any)
+      const { error: swipesError } = await (supabase as any)
         .from('swipes')
         .delete()
         .or(`swiper_id.eq.${userId},swiped_id.eq.${userId}`);
@@ -354,7 +354,7 @@ export default function AdminDashboard() {
       }
 
       // 4. Delete all messages from this user
-      const { error: messagesError } = await (supabaseAdmin as any)
+      const { error: messagesError } = await (supabase as any)
         .from('messages')
         .delete()
         .eq('sender_id', userId);
@@ -366,7 +366,7 @@ export default function AdminDashboard() {
       }
 
       // 5. Delete all notifications for and from this user
-      const { error: notifError } = await (supabaseAdmin as any)
+      const { error: notifError } = await (supabase as any)
         .from('notifications')
         .delete()
         .or(`user_id.eq.${userId},from_user_id.eq.${userId}`);
@@ -378,7 +378,7 @@ export default function AdminDashboard() {
       }
 
       // 6. Delete all tasks for this user
-      const { error: tasksError } = await (supabaseAdmin as any)
+      const { error: tasksError } = await (supabase as any)
         .from('tasks')
         .delete()
         .or(`user_id.eq.${userId},partner_id.eq.${userId}`);
@@ -390,7 +390,7 @@ export default function AdminDashboard() {
       }
 
       // 7. Delete all reports involving this user (both as reporter and reported)
-      const { error: reportsError } = await (supabaseAdmin as any)
+      const { error: reportsError } = await (supabase as any)
         .from('reports')
         .delete()
         .or(`reporter_id.eq.${userId},reported_id.eq.${userId}`);
@@ -423,7 +423,7 @@ export default function AdminDashboard() {
     setLoadingMessages(true);
     try {
       // First, find the match between these two users
-      const { data: match } = await (supabaseAdmin as any)
+      const { data: match } = await (supabase as any)
         .from('matches')
         .select('id')
         .or(`and(user1_id.eq.${reporterId},user2_id.eq.${reportedId}),and(user1_id.eq.${reportedId},user2_id.eq.${reporterId})`)
@@ -437,7 +437,7 @@ export default function AdminDashboard() {
       }
 
       // Get all messages for this match
-      const { data: messages, error } = await (supabaseAdmin as any)
+      const { data: messages, error } = await (supabase as any)
         .from('messages')
         .select('*')
         .eq('match_id', match.id)
