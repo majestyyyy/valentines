@@ -17,12 +17,19 @@ export const supabase = supabaseInstance || (supabaseInstance = createClient<Dat
   }
 }))
 
-// Admin client with service_role key for bypassing RLS
-const supabaseServiceKey = process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey;
-export const supabaseAdmin = supabaseAdminInstance || (supabaseAdminInstance = createClient<Database>(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
-}))
+// CRITICAL SECURITY FIX: Service role key should NEVER be used in client-side code!
+// Admin operations should be moved to server-side API routes.
+// Removing supabaseAdmin client from client-side code.
+// 
+// If you need admin operations:
+// 1. Create API routes in app/api/admin/
+// 2. Use service role key ONLY in server-side code
+// 3. Implement proper authentication checks
+//
+// Example: app/api/admin/users/route.ts
+// import { createClient } from '@supabase/supabase-js'
+// const supabaseAdmin = createClient(
+//   process.env.SUPABASE_URL!,
+//   process.env.SUPABASE_SERVICE_ROLE_KEY!  // No NEXT_PUBLIC_ prefix!
+// )
 

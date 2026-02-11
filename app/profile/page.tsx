@@ -84,7 +84,7 @@ export default function ProfilePage() {
 
       setUserId(user.id);
 
-      const { data: profile } = await (supabase as any)
+      const { data: profile } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
@@ -330,10 +330,15 @@ export default function ProfilePage() {
         updateData.approved_gender = currentProfile.gender;
       }
 
-      const { error: updateError } = await (supabase as any)
+      // SECURITY FIX: Get authenticated user ID directly from session
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // SECURITY FIX: Use authenticated user ID, not state variable
+      const { error: updateError } = await supabase
         .from('profiles')
         .update(updateData)
-        .eq('id', userId);
+        .eq('id', user.id);
 
       if (updateError) throw updateError;
 

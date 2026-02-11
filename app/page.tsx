@@ -113,12 +113,13 @@ export default function LoginPage() {
         return;
       }
 
-      const { error } = await (supabase as any)
+      // SECURITY FIX: Use authenticated session user ID, not state variable
+      const { error } = await supabase
         .from('profiles')
         .update({
           terms_accepted_at: new Date().toISOString(),
         })
-        .eq('id', pendingUserId);
+        .eq('id', session.user.id);
 
       if (error) {
         console.error('Profile update error:', error);
