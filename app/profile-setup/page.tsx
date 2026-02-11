@@ -353,7 +353,7 @@ function ProfileSetupContent() {
 
       // 3. Update/Insert Profile with status back to pending
       const hashedEmail = await hashEmail(user.email!);
-      const { error } = await supabase.from('profiles').upsert({
+      const { error } = await (supabase as any).from('profiles').upsert({
         id: user.id,
         email: hashedEmail,
         nickname: sanitizedNickname,
